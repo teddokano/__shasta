@@ -1,0 +1,8 @@
+../source/shasta_register.cpp:8:1:SHASTA_basic::~SHASTA_basic()	8	static
+../source/shasta_register.cpp:8:1:virtual SHASTA_basic::~SHASTA_basic()	8	static
+../source/shasta_register.cpp:13:6:virtual void SHASTA_basic::command(uint16_t)	0	static
+../source/shasta_register.cpp:18:6:virtual void SHASTA_basic::reg(Register16, uint16_t)	0	static
+../source/shasta_register.cpp:23:6:virtual void SHASTA_basic::reg(Register24, uint32_t)	0	static
+../source/shasta_register.cpp:28:10:virtual uint16_t SHASTA_basic::reg(Register16)	0	static
+../source/shasta_register.cpp:33:10:virtual uint32_t SHASTA_basic::reg(Register24)	0	static
+../source/shasta_register.cpp:3:1:SHASTA_basic::SHASTA_basic(SPI&, bool)	8	static

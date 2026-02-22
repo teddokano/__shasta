@@ -1,0 +1,3 @@
+../source/main.cpp:39:6:void tr(uint8_t, uint8_t, uint8_t, uint8_t)	8	static
+../source/main.cpp:126:1:cpp)	16	static
+../source/main.cpp:50:5:int main()	8	static
