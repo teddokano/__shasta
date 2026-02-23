@@ -38,44 +38,24 @@ int main( void )
 	printf( "0x%04X\r\n", shasta.reg( PN2 ) );
 	printf( "0x%04X\r\n", shasta.reg( PN1 ) );
 
-//	shasta.reg( 0x1024, 0x0800 );
 	wait( 0.002 );
 	
 	printf( "gain_coeff = %lf\r\n", (double)shasta.reg( GAINCOEF1 ) / (double)0x400000 );
 	printf( "ofst_coeff = %ld\r\n", shasta.reg( OFFSET_COEF1 ) );
 	printf( "ofst_coeff = 0x%lX\r\n", shasta.reg( OFFSET_COEF1 ) );
 
-#if 1
 	shasta.reg( GAINCOEF1, coef_gain );
 	shasta.reg( OFFSET_COEF1, coef_ofst );
-#else
-	shasta.reg( GAINCOEF1, 0x400000 );
-	shasta.reg( OFFSET_COEF1, 0x000000 );	
-#endif
 
-	shasta.reg( AIO_CONFIG, 0x6061 );
-	
+	shasta.reg( AIO_CONFIG, 0x6061 );	
 	shasta.reg( AO_CAL_COEF, 0x1 << 12 );
-	
-//	shasta.reg( AIO_PROT_CFG, 0x7 << 13 | 0x0 << 11 | 0x3 << 9 | 0x1 << 8 | 0x3 << 6 );
 	shasta.reg( AO_SLR_CTRL, 0xAA00 );
-
 	shasta.reg( AWG_PER, 0x0000 );
-
-//	shasta.reg( AO_SYSCFG, 0x0C00 );
 	shasta.reg( AO_SYSCFG, 0x0C00 );
 	
 #if 1
 	shasta.reg( SYS_CONFIG, 0x0000 );
 	shasta.reg( CK_SRC_SEL_CONFIG, 0x0000 );
-
-//	shasta.reg( CK_SRC_SEL_CONFIG, 0x0000 );
-#endif
-
-#if 0
-	shasta.reg( AO_OC_POS_LIMIT, (0x614780 * 5) / 4 );
-//	shasta.reg( AO_OC_NEG_LIMIT, 0x614780 );
-//	shasta.reg( AO_OC_NEG_LIMIT, 0x7FFFFF );
 #endif
 	
 	shasta.reg( AO_DATA, 0x614780 );
