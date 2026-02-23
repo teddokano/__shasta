@@ -17,6 +17,9 @@ constexpr double	dmm_ofst	= dmm_top - (dmm_gain * dmm_top);
 constexpr int32_t	coef_gain	= (int32_t)(dmm_gain * (double)0x400000);
 constexpr int32_t	coef_ofst	= (int32_t)((dmm_ofst / 25.00) * (double)0x7FFFFF);
 
+constexpr int32_t	dac_code_neg20mA	= 0x614780;
+
+
 int main( void )
 {
 	printf( "***** Hello, NAFE13388 UIM board! *****\r\n" );
@@ -58,19 +61,15 @@ int main( void )
 	shasta.reg( CK_SRC_SEL_CONFIG, 0x0000 );
 #endif
 	
-	shasta.reg( AO_DATA, 0x614780 );
-//	shasta.reg( AO_DATA, ~0x614780 );
-
-	
-	int32_t	count	= 0;
+	shasta.reg( AO_DATA, dac_code_neg20mA );
 	
 	while ( true )
 	{
-		shasta.reg( AO_DATA, 0x614780 );
+		shasta.reg( AO_DATA, dac_code_neg20mA );
 		printf( "0x%04X\r\n", shasta.reg( AIO_STATUS ) );
 		wait( 2 );
 
-		shasta.reg( AO_DATA, ~0x614780 );
+		shasta.reg( AO_DATA, ~dac_code_neg20mA );
 		printf( "0x%04X\r\n", shasta.reg( AIO_STATUS ) );
 		wait( 2 );
 	}
