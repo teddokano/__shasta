@@ -67,8 +67,6 @@ int main( void )
 	shasta.reg( AWG_PER,     0x0000 );
 	shasta.reg( AO_SYSCFG,   0x0C00 );
 	
-//	shasta.reg( AO_DATA, dac_code_neg20mA );
-	
 #ifdef	PERFORM_MANUAL_CALIBRATION
 	std::vector<double>	current	= { -20.00, 20.00 };
 #else
