@@ -1,8 +1,9 @@
-#define	PERFORM_MANUAL_CALIBRATION
+//#define	PERFORM_MANUAL_CALIBRATION
 
-constexpr double	dmm_top		=  20.262;
-constexpr double	dmm_btm		= -20.342;
-
+//constexpr double	dmm_top		=  20.262;
+//constexpr double	dmm_btm		= -20.342;
+constexpr double	dmm_top		=  20.264;
+constexpr double	dmm_btm		= -20.344;
 
 #include	"r01lib.h"
 #include	"shasta_register.h"
@@ -28,16 +29,14 @@ constexpr int32_t	coef_gain	= (int32_t)(dmm_gain * (double)0x400000);
 constexpr int32_t	coef_ofst	= (int32_t)((dmm_ofst / 20.00) * (double)dac_code_neg20mA);
 #endif
 
-constexpr auto		wait_in_steps	= 5;
-
-int32_t	mA2DaCCode( double value )
+int32_t	mA2DacCode( double value )
 {
 	return	~(int32_t)((double)0x614780 * value / ref_point);
 }
 
 int main( void )
 {
-	printf( "***** Hello, NAFE13388 UIM board! *****\r\n" );
+	printf( "***** Hello, SHASTA board! *****\r\n" );
 
 	spi.frequency( 1'000'000 );
 	spi.mode( 1 );
@@ -63,6 +62,7 @@ int main( void )
 
 	shasta.reg( AIO_CONFIG,  0x6061 );
 	shasta.reg( AO_CAL_COEF, 0x1 << 12 );
+	shasta.reg( AIO_PROT_CFG, 0x7 << 13 | 0x0 << 11 | 0x3 << 9 | 0x1 << 8 | 0x3 << 6 );
 	shasta.reg( AO_SLR_CTRL, 0xAA00 );
 	shasta.reg( AWG_PER,     0x0000 );
 	shasta.reg( AO_SYSCFG,   0x0C00 );
@@ -79,9 +79,13 @@ int main( void )
 	{
 		for ( auto&& c: current )
 		{
-			shasta.reg( AO_DATA, mA2DaCCode( c ) );
-			printf( "output = %+4.1lf, status = 0x%04X\r\n", c, shasta.reg( AIO_STATUS ) );
-			wait( wait_in_steps );
+			printf( "hit [return] key in terminal pane to output = %+4.1lfmA", c );
+			getchar();
+
+			shasta.reg( AO_DATA, mA2DacCode( c ) );
+
+			wait( 1 );
+			printf( "now, output is %+4.1lfmA, status = 0x%04X\r\n\r\n", c, shasta.reg( AIO_STATUS ) );
 		}
 	}
 }
