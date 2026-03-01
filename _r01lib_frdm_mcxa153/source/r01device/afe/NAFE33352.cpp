@@ -36,6 +36,27 @@ void NAFE33352_Base::LogicalChannel::configure( uint16_t cc0, uint16_t cc1, uint
 	afe_ptr->open_logical_channel( ch_number, tmp_ch_config );
 }
 
+NAFE33352_Base::DAC::DAC()
+{
+}
+
+NAFE33352_Base::DAC::~DAC()
+{
+}
+
+void NAFE33352_Base::DAC::configure( uint16_t cc0, uint16_t cc1, uint16_t cc2, uint16_t cc3, uint16_t cc4, uint16_t cc5 )
+{
+	const uint16_t	tmp_ch_config[ 6 ]	= { cc0, cc1, cc2, cc3, cc4, cc5 };
+	afe_ptr->open_dac_output( tmp_ch_config );
+}
+
+void NAFE33352_Base::DAC::configure( const uint16_t (&cc)[ 6 ] )
+{
+	afe_ptr->open_dac_output( cc );
+}
+
+
+
 /* NAFE33352_Base class ******************************************/
 
 NAFE33352_Base::NAFE33352_Base( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET ) 
@@ -46,6 +67,8 @@ NAFE33352_Base::NAFE33352_Base( SPI& spi, bool spi_addr, bool hsv, int nINT, int
 		logical_channel[ i ].afe_ptr	= this;
 		logical_channel[ i ].ch_number	= i;
 	}
+	
+	dac.afe_ptr	= this;
 }
 
 NAFE33352_Base::~NAFE33352_Base()
@@ -59,6 +82,13 @@ void NAFE33352_Base::boot( void )
 	wait( 0.001 );
 	
 	DRDY_by_sequencer_done( true );
+	
+	reg( SYS_CONFIG,        0x0000 );
+	reg( CK_SRC_SEL_CONFIG, 0x0000 );
+
+	reg( AI_SYSCFG,         0x0800 );
+
+
 }
 
 void NAFE33352_Base::reset( bool hardware_reset )
@@ -87,10 +117,19 @@ void NAFE33352_Base::reset( bool hardware_reset )
 	panic( "NAFE13388 couldn't get ready. Check power supply or pin conections\r\n" );
 }
 
+void NAFE33352_Base::open_dac_output( const uint16_t (&cc)[ 6 ] )
+{
+	for ( auto i = 0; i < 6; i++ )
+		reg( AIO_CONFIG + i, cc[ i ] );
+}
+
+
 void NAFE33352_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 {	
-	constexpr double	pow2_24	= (double)(1 << 24);
-	double				coeff	= 0.00;
+	static bool			pga_enabled	= false;
+	constexpr double	pow2_24		= (double)(1 << 24);
+	double				coeff		= 0.00;
+	bool				pga_on		= false;
 	
 	mux_setting[ ch ]	= (cc[ 0 ] >> 3) & 0x1F;
 	
@@ -104,16 +143,20 @@ void NAFE33352_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 			break;
 		case 1:
 			coeff	= (20.00 * 2.50) / ((cc[ 0 ] & 0x0200 ? 16.00 : 1.00) * pow2_24);
+			pga_on	= true;
 			break;
 		case 2:
 		case 7:
 			coeff	= (20.00 * 2.50) / pow2_24;
+			pga_on	= true;
 			break;
 		case 4:
 			coeff	= (20.00 * 2.50) / ((cc[ 0 ] & 0x0200 ? 16.00 : 1.00) * pow2_24);
+			pga_on	= true;
 			break;
 		case 5:
 			coeff	= (20.00 * 2.50) / ((cc[ 0 ] & 0x0100 ? 16.00 : 1.00) * pow2_24);
+			pga_on	= true;
 			break;
 		case 6:
 			coeff	= (20.00 * 2.50) / (3.7989 * pow2_24);
@@ -144,6 +187,12 @@ void NAFE33352_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 	}
 	
 	coeff_uV[ ch ]		= coeff * 1e6;
+	
+	if ( pga_on && !pga_enabled )
+	{
+		reg( AI_SYSCFG, 0x0800 );
+		pga_enabled	= true;
+	}
 	
 	for ( auto i = 0; i < 3; i++ )
 		reg( AI_CONFIG0 + i, cc[ i ] );
@@ -219,14 +268,11 @@ double NAFE33352_Base::calc_delay( int ch )
 	if ( ch_chop )
 		base_freq	/= 2;
 	
-#if 1
+#if  0
 	printf( "adc_data_rate = %d\r\n", adc_data_rate );
 	printf( "base_freq = %lf\r\n", base_freq );
 	printf( "delay_setting = %lf\r\n", delay_setting  );
 	printf( "channel delay = %lf\r\n", (1 / base_freq) + delay_setting  );
-
-//	return ((1 / base_freq) + delay_setting) *10;
-
 #endif
 	
 	return (1 / base_freq) + delay_setting;

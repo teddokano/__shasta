@@ -8,6 +8,10 @@
 
 #include "AFE_NXP.h"
 
+
+#ifndef ARDUINO_AFE_NAFE33352_DRIVER_H
+#define ARDUINO_AFE_NAFE33352_DRIVER_H
+
 class NAFE33352_Base : public AFE_base
 {
 public:
@@ -54,10 +58,28 @@ public:
 	
 	LogicalChannel	logical_channel[ 16 ];
 
+	class DAC
+	{
+	public:
+		DAC();
+		virtual ~DAC();
+		
+		void	configure( const uint16_t (&cc)[ 6 ] );
+		void	configure( uint16_t cc0, uint16_t cc1, uint16_t cc2, uint16_t cc3, uint16_t cc4, uint16_t cc5 );
+	
+		NAFE33352_Base	*afe_ptr;
+	};
+	
+	DAC	dac;
+	
 private:	
 	double 	calc_delay( int ch );
 	void 	channel_info_update( uint16_t value );
+	
 public:
+	void	open_dac_output( const uint16_t (&cc)[ 6 ] );
+
+
 	/** Logical channel disable
 	 *
 	 * @param ch logical channel number (0 ~ 15)
@@ -392,3 +414,4 @@ inline NAFE33352_Base::Register24 operator+( int n, NAFE33352_Base::Register24 r
 	return static_cast<NAFE33352_Base::Register24>( n + static_cast<uint16_t>( rn ) );
 }
 
+#endif // !ARDUINO_AFE_NAFE33352_DRIVER_H
