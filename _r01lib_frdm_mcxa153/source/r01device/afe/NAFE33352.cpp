@@ -213,16 +213,20 @@ double NAFE33352_Base::calc_delay( int ch )
 	if ( (28 < adc_data_rate) || (4 < adc_sinc) || ((adc_data_rate < 12) && (adc_sinc)) )
 		return 0.00;
 	
-	if ( !adc_normal_setting  )
+	if ( !adc_normal_setting )
 		base_freq	/= (adc_sinc + 1);
 	
 	if ( ch_chop )
 		base_freq	/= 2;
 	
-#if 0
+#if 1
+	printf( "adc_data_rate = %d\r\n", adc_data_rate );
 	printf( "base_freq = %lf\r\n", base_freq );
 	printf( "delay_setting = %lf\r\n", delay_setting  );
 	printf( "channel delay = %lf\r\n", (1 / base_freq) + delay_setting  );
+
+//	return ((1 / base_freq) + delay_setting) *10;
+
 #endif
 	
 	return (1 / base_freq) + delay_setting;

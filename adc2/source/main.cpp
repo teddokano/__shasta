@@ -94,11 +94,11 @@ int main( void )
 	shasta.reg( SYS_CONFIG,  0x0000 );
 	shasta.reg( CK_SRC_SEL_CONFIG,  0x0000 );
 
-	shasta.logical_channel[  0 ].configure( 0x0020, 0x5038, 0x5000 );
-	shasta.logical_channel[  1 ].configure( 0x0080, 0x5038, 0x5000 );
-	shasta.logical_channel[  2 ].configure( 0x0088, 0x5038, 0x5000 );
+	shasta.logical_channel[  0 ].configure( 0x0020, 0x50B4, 0x5000 );
+	shasta.logical_channel[  1 ].configure( 0x0080, 0x5064, 0x5000 );
+	shasta.logical_channel[  2 ].configure( 0x0088, 0x5064, 0x5000 );
 
-	shasta.use_DRDY_trigger( false );	//	default = true
+//	shasta.use_DRDY_trigger( false );	//	default = true
 
 	double	data;
 
