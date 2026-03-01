@@ -387,7 +387,7 @@ class NAFE33352 : public NAFE33352_Base
 {
 public:	
 	/** Constructor to create a NAFE13388 instance */
-	NAFE33352( SPI& spi, bool spi_addr = 0, bool highspeed_variant = false, int nINT = D2, int DRDY = D3, int SYN = D5, int nRESET = D6 );
+	NAFE33352( SPI& spi, bool spi_addr = 0, bool highspeed_variant = false, int nINT = D2, int DRDY = D4, int SYN = D5, int nRESET = D6 );
 
 	/** Destractor */
 	virtual ~NAFE33352();

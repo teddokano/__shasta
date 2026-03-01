@@ -86,7 +86,6 @@ AFE_base::~AFE_base()
 void AFE_base::init( void )
 {
 	pin_DRDY.rise( DRDY_cb );
-	
 	drdy_flag		= false;
 	set_DRDY_callback( [this](void){ default_drdy_cb(); } );
 }
@@ -100,7 +99,7 @@ void AFE_base::begin( void )
 
 void AFE_base::set_DRDY_callback( callback_fp_t func )
 {
-	cbf_DRDY		= func;
+	cbf_DRDY	= func;
 }
 
 void AFE_base::DRDY_cb( void )
@@ -118,7 +117,7 @@ void AFE_base::default_drdy_cb( void )
 int32_t AFE_base::start_and_read( int ch )
 {
 	double	wait_time	= cbf_DRDY ? -1.0 : ch_delay[ ch ] * delay_accuracy;
-	
+
 	start( ch );
 	wait_conversion_complete( wait_time );
 	
@@ -177,7 +176,7 @@ int AFE_base::wait_conversion_complete( double delay )
 		;
 
 	drdy_flag	= false;
-	
+
 	if ( !timeout_count )
 	{
 		printf( "DRDY signal wait timeout\r\n" );

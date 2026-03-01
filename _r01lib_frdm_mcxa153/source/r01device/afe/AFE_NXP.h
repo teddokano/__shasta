@@ -305,8 +305,9 @@ protected:
 	constexpr static uint32_t	timeout_limit	= 100000000;
 
 	static callback_fp_t	cbf_DRDY;
-
+public:
 	virtual void			init( void );
+protected:
 	void					default_drdy_cb( void );
 	
 	static void				DRDY_cb( void );

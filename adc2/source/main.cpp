@@ -2,7 +2,8 @@
 #include	"afe/NAFE33352.h"
 
 SPI				spi( ARD_MOSI, ARD_MISO, ARD_SCK, ARD_CS );	//	MOSI, MISO, SCLK, CS
-NAFE33352		shasta( spi, 0 );
+
+InterruptIn		d4( D4 );
 
 using enum NAFE33352::Register16;
 using enum NAFE33352::Register24;
@@ -17,15 +18,17 @@ int32_t	mA2DacCode( double value )
 
 void set_current( double c )
 {
-	shasta.reg( AO_DATA, mA2DacCode( c ) );
+//	shasta.reg( AO_DATA, mA2DacCode( c ) );
 
 	wait( 0.2 );
-	printf( "now, output is %+4.1lfmA, status = 0x%04X\r\n", c, shasta.reg( AIO_STATUS ) );
+//	printf( "now, output is %+4.1lfmA, status = 0x%04X\r\n", c, shasta.reg( AIO_STATUS ) );
 }
-
 
 int main( void )
 {
+//	NAFE33352		shasta( spi, 0, false, D2, D4 );
+ 	NAFE33352		shasta( spi, 0 );
+
 	printf( "***** Hello, SHASTA board! *****\r\n" );
 
 	spi.frequency( 1'000'000 );
@@ -36,13 +39,16 @@ int main( void )
 	while ( !(shasta.reg( SYS_STATUS ) & 0x2000) )
 		;
 
+	shasta.init();
+//	shasta.set_DRDY_callback( cb );
+
 #if 1
 	printf( "Part number          = 0x%04X%04X%02\r\n", shasta.reg( PN2 ), shasta.reg( PN1 ), shasta.reg( PN0_REV ) >> 8 );
 	printf( "Revision             = 0x%02X\r\n", shasta.reg( PN0_REV ) & 0xFF );
 	printf( "Unique serial number = 0x%06X%06X\r\n", shasta.reg( SERIAL1 ), shasta.reg( SERIAL0 ) );
 
 	printf( "GAINCOEF5 = 0x%lX\r\n", shasta.reg( GAIN_COEF5 )  );
-	printf( "GAINCOEF5 = %lf\r\n", shasta.reg( GAIN_COEF5 ) / (double)0x400000  );
+	printf( "GAINCOEF5 = %lf\r\n",   shasta.reg( GAIN_COEF5 ) / (double)0x400000  );
 #endif
 
 	shasta.dac.configure( 0x6061, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
@@ -52,18 +58,9 @@ int main( void )
 	shasta.logical_channel[  1 ].configure( 0x0080, 0x5064, 0x5000 );
 	shasta.logical_channel[  2 ].configure( 0x0088, 0x5064, 0x5000 );
 
-//	shasta.use_DRDY_trigger( false );	//	default = true
-
-	printf( "0x%04X\r\n", shasta.reg( AIO_CONFIG + 0 ) );
-	printf( "0x%04X\r\n", shasta.reg( AIO_CONFIG + 1 ) );
-	printf( "0x%04X\r\n", shasta.reg( AIO_CONFIG + 2 ) );
-	printf( "0x%04X\r\n", shasta.reg( AIO_CONFIG + 3 ) );
-	printf( "0x%04X\r\n", shasta.reg( AIO_CONFIG + 4 ) );
-	printf( "0x%04X\r\n", shasta.reg( AIO_CONFIG + 5 ) );
-
+	shasta.use_DRDY_trigger( true );	//	default = true
 
 	double	data;
-
 
 	while ( true )
 	{
