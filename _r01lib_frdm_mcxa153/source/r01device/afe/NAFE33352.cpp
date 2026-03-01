@@ -91,9 +91,12 @@ void NAFE33352_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 {	
 	constexpr double	pow2_24	= (double)(1 << 24);
 	double				coeff	= 0.00;
-	command( ch );
+	
+	mux_setting[ ch ]	= (cc[ 0 ] >> 3) & 0x1F;
+	
+	command( CMD_CH0 + ch );
 
-	switch ( (cc[ 0 ] >> 3) & 0x1F )
+	switch ( mux_setting[ ch ] )
 	{
 		case 0:
 		case 3:
@@ -136,7 +139,7 @@ void NAFE33352_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 			break;
 		case 16:
 		case 17:
-			coeff	= (40.00 * 20.00 * 2.50) / (12.5 * pow2_24) - 1.50;
+			coeff	= (40.00 * 20.00 * 2.50) / (12.5 * pow2_24);
 			break;
 	}
 	
@@ -187,7 +190,7 @@ double NAFE33352_Base::calc_delay( int ch )
 												  256, 358, 512, 716, 
 												  1024, 1664, 3276, 7680, 19200, 23040, };
 	
-	command( ch );
+	command( CMD_CH0 + ch );
 
 	uint16_t ch_config1	= reg( AI_CONFIG1 );
 	uint16_t ch_config2	= reg( AI_CONFIG2 );
@@ -256,7 +259,7 @@ void NAFE33352_Base::close_logical_channel( void )
 
 void NAFE33352_Base::start( int ch )
 {
-	command( ch     );
+	command( CMD_CH0 + ch );
 	command( CMD_SS );
 }
 

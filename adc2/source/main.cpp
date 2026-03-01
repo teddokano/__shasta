@@ -6,17 +6,17 @@ constexpr double	dmm_top		=  20.17575;
 constexpr double	dmm_btm		= -20.23865;
 
 #include	"r01lib.h"
-#include	"shasta_register.h"
-
+#include	"afe/NAFE33352.h"
+#
 SPI				spi( ARD_MOSI, ARD_MISO, ARD_SCK, ARD_CS );	//	MOSI, MISO, SCLK, CS
-SHASTA_basic	shasta( spi, 0 );
+NAFE33352		shasta( spi, 0 );
 
 InterruptIn		up( SW2 );
 InterruptIn		down( SW3 );
 
-using enum SHASTA_basic::Register16;
-using enum SHASTA_basic::Register24;
-using enum SHASTA_basic::Command;
+using enum NAFE33352::Register16;
+using enum NAFE33352::Register24;
+using enum NAFE33352::Command;
 
 constexpr double	ref_point	=  20.00;
 constexpr double	dmm_gain	= (ref_point * 2) / (dmm_top - dmm_btm);
@@ -75,10 +75,10 @@ int main( void )
 	printf( "Revision             = 0x%02X\r\n", shasta.reg( PN0_REV ) & 0xFF );
 	printf( "Unique serial number = 0x%06X%06X\r\n", shasta.reg( SERIAL1 ), shasta.reg( SERIAL0 ) );
 
-	printf( "GAINCOEF5 = 0x%lX\r\n", shasta.reg( GAINCOEF1 )  );
-	printf( "GAINCOEF5 = %lf\r\n", shasta.reg( GAINCOEF1 ) / (double)0x400000  );
+	printf( "GAINCOEF5 = 0x%lX\r\n", shasta.reg( GAIN_COEF5 )  );
+	printf( "GAINCOEF5 = %lf\r\n", shasta.reg( GAIN_COEF5 ) / (double)0x400000  );
 
-	shasta.reg( GAINCOEF5,    coef_gain );
+	shasta.reg( GAIN_COEF5,   coef_gain );
 	shasta.reg( OFFSET_COEF5, coef_ofst );
 
 #endif
@@ -94,20 +94,26 @@ int main( void )
 	shasta.reg( SYS_CONFIG,  0x0000 );
 	shasta.reg( CK_SRC_SEL_CONFIG,  0x0000 );
 
-	shasta.command( CMD_CH0 );
-	shasta.reg( AI_CONFIG0,  0x0024 );
-	shasta.reg( AI_CONFIG1,  0x5038 );
-	shasta.reg( AI_CONFIG2,  0x5000 );
+	shasta.logical_channel[  0 ].configure( 0x0020, 0x5038, 0x5000 );
+	shasta.logical_channel[  1 ].configure( 0x0080, 0x5038, 0x5000 );
+	shasta.logical_channel[  2 ].configure( 0x0088, 0x5038, 0x5000 );
+
+	shasta.use_DRDY_trigger( false );	//	default = true
+
+	double	data;
 
 	while ( true )
 	{
-		shasta.command( CMD_SS );
-		wait( 0.1 );
+		data	= shasta.logical_channel[ 0 ] * 1e-6;
+		printf( "    %lfV", data );
 
-			int32_t	data	= shasta.reg( AI_DATA0 );
-			printf( "0x%06X, ", data & 0xFFFFFF );
-			double	coeff	= ((20.00 * 2.50 / (double)(1 << 24) ));
-			printf( "%lfV\r\n", (double)data * coeff );
+		data	= shasta.logical_channel[ 1 ] * 1e-6;
+		printf( "    %lfV", data );
+
+		data	= shasta.logical_channel[ 2 ] * 1e-6;
+		printf( "    %lfV", data );
+
+		printf( "\r\n" );
 
 		wait( 1.0 );
 	}

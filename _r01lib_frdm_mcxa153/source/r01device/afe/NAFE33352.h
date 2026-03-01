@@ -124,6 +124,15 @@ public:
 	 */
 	virtual void	read( std::vector<microvolt_t>& data_vctr );
 
+	inline double raw2uv( int ch, raw_t value )
+	{
+		if ( mux_setting[ ch ] == 13 )
+			return	value - (double)(1 << 24) * 20.00 * 2.50 / (12.50 * (double)(1 << 24)) -1.50;
+		else
+			return	value * coeff_uV[ ch ];
+	}
+	
+
 	constexpr static double	pga_gain[]	= { 1.00, 16.00 };
 
 	enum GainPGA : uint8_t {
@@ -173,14 +182,14 @@ public:
 	};
 
 	enum class Register24 : uint16_t {
-		GAINCOEF0			= 0x50,
-		GAINCOEF1,
-		GAINCOEF2,
-		GAINCOEF3,
-		GAINCOEF4,
-		GAINCOEF5,
-		GAINCOEF6,
-		GAINCOEF7,
+		GAIN_COEF0			= 0x50,
+		GAIN_COEF1,
+		GAIN_COEF2,
+		GAIN_COEF3,
+		GAIN_COEF4,
+		GAIN_COEF5,
+		GAIN_COEF6,
+		GAIN_COEF7,
 		OFFSET_COEF0		= 0x58,
 		OFFSET_COEF1,
 		OFFSET_COEF2,

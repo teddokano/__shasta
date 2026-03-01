@@ -212,37 +212,7 @@ public:
 	 * @param ch logical channel number to select its gain coefficient
 	 * @param value ADC read value
 	 */
-	inline double raw2uv( int ch, raw_t value )
-	{
-		double	v	= value * coeff_uV[ ch ];
-
-		if ( HV_MUX != mux_setting[ ch ] )
-		{
-#if 1
-			switch ( mux_setting[ ch ] )
-			{
-				case REF2_REF2:
-				case GPIO0_GPIO1:
-					return v;
-					break;
-				case REFCOARSE_REF2:
-				case VADD_REF2:
-					return 2.00 * (v + 1.5e6);
-					break;
-				case VHDD_REF2:
-					return 32.00 * (v + 0.25e6);
-					break;
-				case REF2_VHSS:
-					return -32.00 * (v - 0.25e6);
-					break;
-			}
-#else
-			return v;
-#endif
-		}
-		
-		return v;
-	}
+	virtual double raw2uv( int ch, raw_t value )	= 0;
 	
 	/** Convert raw output to milli-volt
 	 *
@@ -499,6 +469,32 @@ public:
 	 */
 	virtual void	read( std::vector<microvolt_t>& data_vctr );
 
+	inline double raw2uv( int ch, raw_t value )
+	{
+		double	v	= value * coeff_uV[ ch ];
+
+		if ( HV_MUX != mux_setting[ ch ] )
+		{
+			switch ( mux_setting[ ch ] )
+			{
+				case REF2_REF2:
+				case GPIO0_GPIO1:
+					return v;
+					break;
+				case REFCOARSE_REF2:
+				case VADD_REF2:
+					return 2.00 * (v + 1.5e6);
+					break;
+				case VHDD_REF2:
+					return 32.00 * (v + 0.25e6);
+					break;
+				case REF2_VHSS:
+					return -32.00 * (v - 0.25e6);
+					break;
+			}
+		}		
+		return v;
+	}
 	
 	constexpr static double	pga_gain[]	= { 0.2, 0.4, 0.8, 1, 2, 4, 8, 16 };
 

@@ -106,7 +106,8 @@ int main( void )
 
 			int32_t	data	= shasta.reg( AI_DATA0 );
 			printf( "0x%06X, ", data & 0xFFFFFF );
-			printf( "%lfV\r\n", (double)(data * 20) * 2.50 / (double)(1 << 24) );
+			double	coeff	= ((20.00 * 2.50 / (double)(1 << 24) ));
+			printf( "%lfV\r\n", (double)data * coeff );
 
 		wait( 1.0 );
 	}
