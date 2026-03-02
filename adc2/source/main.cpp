@@ -47,8 +47,11 @@ int main( void )
 #endif
 
 //	shasta.dac.configure( 0x6061, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
+//	set_current( 2.0 );
+
 	shasta.dac.configure( 0x6041, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
-	set_current( 2.0 );
+	shasta.reg( AO_DATA, -(1 << 22) );
+
 
 	shasta.logical_channel[  0 ].configure( 0x0020, 0x50B4, 0x5000 );
 	shasta.logical_channel[  1 ].configure( 0x0080, 0x5064, 0x5000 );
