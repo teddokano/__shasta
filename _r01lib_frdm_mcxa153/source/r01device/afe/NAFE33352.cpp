@@ -44,6 +44,29 @@ NAFE33352_Base::DAC::~DAC()
 {
 }
 
+void NAFE33352_Base::DAC::mode( ModeSelect mode, double fs )
+{
+	output_mode	= mode;
+	
+	if ( 0.0 < fs )
+		full_scale	= fs;
+	else
+	{
+		if ( output_mode == NAFE33352_Base::DAC::ModeSelect::VOLTAGE )
+			full_scale	= 12.50;
+		else if ( output_mode == NAFE33352_Base::DAC::ModeSelect::CURRENT )
+			full_scale	= 0.025 / 0.95;
+		else if ( output_mode == NAFE33352_Base::DAC::ModeSelect::CURRENT_RECAL )
+			full_scale	= 0.025;
+	}
+}
+
+void NAFE33352_Base::DAC::output( double value )
+{
+	afe_ptr->dac_out( value, full_scale, 18 );
+}
+
+
 void NAFE33352_Base::DAC::configure( uint16_t cc0, uint16_t cc1, uint16_t cc2, uint16_t cc3, uint16_t cc4, uint16_t cc5 )
 {
 	const uint16_t	tmp_ch_config[ 6 ]	= { cc0, cc1, cc2, cc3, cc4, cc5 };
@@ -365,6 +388,23 @@ void NAFE33352_Base::read( std::vector<microvolt_t>& data_vctr )
 	
 	for ( auto i = 0; i < enabled_channels; i++ )
 		data_vctr[ i ]	= raw2uv( sequence_order[ i ], raw_data[ i ] );
+}
+
+void NAFE33352_Base::dac_out( double vi, double full_scale, uint8_t bit_length )
+{
+	reg( AO_DATA, dac_code( vi, full_scale, bit_length ) );
+}
+
+int32_t NAFE33352_Base::dac_code( double a, double full_scale, uint8_t bit_length )
+{
+	int32_t	fsv	= (1L << (bit_length - 1));
+
+	int32_t	v	= (int32_t)((double)fsv * -a / full_scale);
+
+	v	= v < -fsv ? -fsv : v;
+	v	= v >  (fsv - 1) ?  (fsv - 1) : v;
+
+	return	v << (24 - bit_length);
 }
 
 void NAFE33352_Base::command( uint16_t com )

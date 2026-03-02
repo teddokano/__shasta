@@ -8,7 +8,6 @@
 
 #include "AFE_NXP.h"
 
-
 #ifndef ARDUINO_AFE_NAFE33352_DRIVER_H
 #define ARDUINO_AFE_NAFE33352_DRIVER_H
 
@@ -61,13 +60,24 @@ public:
 	class DAC
 	{
 	public:
+		enum class ModeSelect : uint16_t {
+			VOLTAGE		= 0,
+			CURRENT,
+			CURRENT_RECAL
+		};
+
 		DAC();
 		virtual ~DAC();
 		
 		void	configure( const uint16_t (&cc)[ 6 ] );
 		void	configure( uint16_t cc0, uint16_t cc1, uint16_t cc2, uint16_t cc3, uint16_t cc4, uint16_t cc5 );
+		void	mode( ModeSelect mode, double fs = 0.00 );
+		void	output( double value );
 	
 		NAFE33352_Base	*afe_ptr;
+	private:
+		ModeSelect		output_mode;
+		double			full_scale;
 	};
 	
 	DAC	dac;
@@ -154,6 +164,12 @@ public:
 			return	value * coeff_uV[ ch ];
 	}
 	
+	/** DAC output
+	 *
+	 * @param data_vctr vector object to store ADC data
+	 */
+	virtual void	dac_out( double vi, double full_scale, uint8_t bit_length );
+	int32_t			dac_code( double a, double full_scale, uint8_t bit_length );
 
 	constexpr static double	pga_gain[]	= { 1.00, 16.00 };
 
@@ -392,7 +408,6 @@ public:
 	/** Destractor */
 	virtual ~NAFE33352();
 };
-
 
 class NAFE33352_UIOM : public NAFE33352_Base
 {

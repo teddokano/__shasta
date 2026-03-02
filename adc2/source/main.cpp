@@ -10,22 +10,6 @@ using enum NAFE33352_UIOM::Command;
 
 constexpr double	ref_point	=  20.00;
 
-int32_t convert_VI_value( double a, double full_scale, uint8_t bit_length )
-{
-	int32_t	fsv	= (1L << (bit_length - 1));
-
-	int32_t	v	= (int32_t)((double)fsv * -a / full_scale);
-
-	v	= v < -fsv ? -fsv : v;
-	v	= v >  (fsv - 1) ?  (fsv - 1) : v;
-
-	return	v << (24 - bit_length);
-}
-
-
-
-
-
 int main( void )
 {
 	printf( "***** Hello, SHASTA board! *****\r\n" );
@@ -44,15 +28,19 @@ int main( void )
 	printf( "GAINCOEF5 = %lf\r\n",   shasta.reg( GAIN_COEF5 ) / (double)0x400000  );
 #endif
 
-//	shasta.dac.configure( 0x6061, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
-//	set_current( 2.0 );
-
+#if 0
+	shasta.dac.configure( 0x6061, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
+	shasta.dac.mode( NAFE33352_Base::DAC::ModeSelect::CURRENT );
+	shasta.dac.output( 0.02 );
+#else
 	shasta.dac.configure( 0x6041, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
-	shasta.reg( AO_DATA, convert_VI_value( 1, 12.5, 18 ) );
-
+	shasta.dac.mode( NAFE33352_Base::DAC::ModeSelect::VOLTAGE );
+	shasta.dac.output( 3 );
+#endif
 	shasta.logical_channel[  0 ].configure( 0x0020, 0x50B4, 0x5000 );
 	shasta.logical_channel[  1 ].configure( 0x0080, 0x5064, 0x5000 );
 	shasta.logical_channel[  2 ].configure( 0x0088, 0x5064, 0x5000 );
+	shasta.logical_channel[  3 ].configure( 0x0038, 0x2064, 0x5000 );
 
 //	shasta.use_DRDY_trigger( false );	//	default = true
 
@@ -60,16 +48,13 @@ int main( void )
 
 	while ( true )
 	{
-		data	= shasta.logical_channel[ 0 ] * 1e-6;
-		printf( "    %lfV", data );
+		for ( auto i = 0; i < 4; i++ )
+		{
+			data	= shasta.logical_channel[ i ] * 1e-6;
+			printf( "    %lfV", data );
+		}
 
-		data	= shasta.logical_channel[ 1 ] * 1e-6;
-		printf( "    %lfV", data );
-
-		data	= shasta.logical_channel[ 2 ] * 1e-6;
-		printf( "    %lfV", data );
-
-		printf( "\r\n" );
+		printf( "status = 0x%04X\r\n", shasta.reg( AIO_STATUS ) );
 
 		wait( 1.0 );
 	}
