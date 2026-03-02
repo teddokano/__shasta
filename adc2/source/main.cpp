@@ -2,6 +2,7 @@
 #include	"afe/NAFE33352.h"
 
 SPI				spi( ARD_MOSI, ARD_MISO, ARD_SCK, ARD_CS );	//	MOSI, MISO, SCLK, CS
+NAFE33352		shasta( spi, 0 );
 
 InterruptIn		d4( D4 );
 
@@ -27,19 +28,13 @@ void set_current( double c )
 int main( void )
 {
 //	NAFE33352		shasta( spi, 0, false, D2, D4 );
- 	NAFE33352		shasta( spi, 0 );
 
 	printf( "***** Hello, SHASTA board! *****\r\n" );
 
 	spi.frequency( 1'000'000 );
 	spi.mode( 1 );
 
-	shasta.command( CMD_RESET );
-
-	while ( !(shasta.reg( SYS_STATUS ) & 0x2000) )
-		;
-
-	shasta.init();
+	shasta.begin();
 //	shasta.set_DRDY_callback( cb );
 
 #if 1
@@ -51,14 +46,15 @@ int main( void )
 	printf( "GAINCOEF5 = %lf\r\n",   shasta.reg( GAIN_COEF5 ) / (double)0x400000  );
 #endif
 
-	shasta.dac.configure( 0x6061, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
+//	shasta.dac.configure( 0x6061, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
+	shasta.dac.configure( 0x6041, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
 	set_current( 2.0 );
 
 	shasta.logical_channel[  0 ].configure( 0x0020, 0x50B4, 0x5000 );
 	shasta.logical_channel[  1 ].configure( 0x0080, 0x5064, 0x5000 );
 	shasta.logical_channel[  2 ].configure( 0x0088, 0x5064, 0x5000 );
 
-	shasta.use_DRDY_trigger( true );	//	default = true
+//	shasta.use_DRDY_trigger( false );	//	default = true
 
 	double	data;
 
