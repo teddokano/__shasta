@@ -10,18 +10,21 @@ using enum NAFE33352_UIOM::Command;
 
 constexpr double	ref_point	=  20.00;
 
-int32_t	mA2DacCode( double value )
+int32_t convert_VI_value( double a, double full_scale, uint8_t bit_length )
 {
-	return	~(int32_t)((double)0x614780 * value / ref_point);
+	int32_t	fsv	= (1L << (bit_length - 1));
+
+	int32_t	v	= (int32_t)((double)fsv * -a / full_scale);
+
+	v	= v < -fsv ? -fsv : v;
+	v	= v >  (fsv - 1) ?  (fsv - 1) : v;
+
+	return	v << (24 - bit_length);
 }
 
-void set_current( double c )
-{
-//	shasta.reg( AO_DATA, mA2DacCode( c ) );
 
-	wait( 0.2 );
-//	printf( "now, output is %+4.1lfmA, status = 0x%04X\r\n", c, shasta.reg( AIO_STATUS ) );
-}
+
+
 
 int main( void )
 {
@@ -45,7 +48,7 @@ int main( void )
 //	set_current( 2.0 );
 
 	shasta.dac.configure( 0x6041, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
-	shasta.reg( AO_DATA, -(1 << 22) );
+	shasta.reg( AO_DATA, convert_VI_value( 1, 12.5, 18 ) );
 
 	shasta.logical_channel[  0 ].configure( 0x0020, 0x50B4, 0x5000 );
 	shasta.logical_channel[  1 ].configure( 0x0080, 0x5064, 0x5000 );
