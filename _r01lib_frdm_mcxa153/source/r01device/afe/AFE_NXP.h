@@ -70,7 +70,7 @@ public:
 	using microvolt_t	= double;
 
 	/** Constructor to create a AFE_base instance */
-	AFE_base( SPI& spi, bool spi_addr, bool highspeed_variant, int nINT, int DRDY, int SYN, int nRESET );
+	AFE_base( SPI& spi, bool spi_addr, bool highspeed_variant, int nINT, int DRDY, int SYN, int nRESET, int SYNCDAC  );
 
 	/** Destractor */
 	virtual ~AFE_base();
@@ -277,6 +277,7 @@ protected:
 	InterruptIn		pin_DRDY;
 	DigitalOut		pin_SYN;
 	DigitalOut		pin_nRESET;
+	DigitalOut		pin_SYNCDAC;
 
 	int 			bit_count( uint32_t value );
 

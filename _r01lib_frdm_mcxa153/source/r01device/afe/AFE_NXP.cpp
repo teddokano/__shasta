@@ -74,8 +74,8 @@ void NAFE13388_Base::LogicalChannel::configure( uint16_t cc0, uint16_t cc1, uint
 
 /* AFE_base class ******************************************/
 
-AFE_base::AFE_base( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET ) : 
-	SPI_for_AFE( spi, spi_addr ), highspeed_variant( hsv ), pin_nINT( nINT ), pin_DRDY( DRDY ), pin_SYN( SYN ), pin_nRESET( nRESET, 1 ), enabled_channels( 0 )
+AFE_base::AFE_base( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET, int SYNCDAC ) : 
+	SPI_for_AFE( spi, spi_addr ), highspeed_variant( hsv ), pin_nINT( nINT ), pin_DRDY( DRDY ), pin_SYN( SYN ), pin_nRESET( nRESET, 1 ), pin_SYNCDAC( SYNCDAC ), enabled_channels( 0 )
 {
 }
 
@@ -199,7 +199,7 @@ AFE_base::callback_fp_t	AFE_base::cbf_DRDY		= nullptr;
 /* NAFE13388_Base class ******************************************/
 
 NAFE13388_Base::NAFE13388_Base( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET ) 
-	: AFE_base( spi, spi_addr, hsv, nINT, DRDY, SYN, nRESET )
+	: AFE_base( spi, spi_addr, hsv, nINT, DRDY, SYN, nRESET, DISABLED_PIN )
 {
 	for ( auto i = 0; i < 16; i++ )
 	{

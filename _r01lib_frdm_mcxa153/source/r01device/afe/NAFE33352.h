@@ -18,7 +18,7 @@ public:
 	using	ch_setting_t	= uint16_t[ 4 ];
 
 	/** Constructor to create a AFE_base instance */
-	NAFE33352_Base( SPI& spi, bool spi_addr, bool highspeed_variant, int nINT, int DRDY, int SYN, int nRESET );
+	NAFE33352_Base( SPI& spi, bool spi_addr, bool highspeed_variant, int nINT, int DRDY, int SYN, int nRESET, int SYNCDAC );
 
 	/** Destractor */
 	virtual ~NAFE33352_Base();
@@ -386,11 +386,22 @@ public:
 class NAFE33352 : public NAFE33352_Base
 {
 public:	
-	/** Constructor to create a NAFE13388 instance */
-	NAFE33352( SPI& spi, bool spi_addr = 0, bool highspeed_variant = false, int nINT = D2, int DRDY = D4, int SYN = D5, int nRESET = D6 );
+	/** Constructor to create a NAFE33352 instance */
+	NAFE33352( SPI& spi, bool spi_addr = 0, bool highspeed_variant = false, int nINT = D7, int DRDY = D4, int SYN = D2, int nRESET = D5, int SYNCDAC = D3 );
 
 	/** Destractor */
 	virtual ~NAFE33352();
+};
+
+
+class NAFE33352_UIOM : public NAFE33352_Base
+{
+public:	
+	/** Constructor to create a NAFE33352 instance */
+	NAFE33352_UIOM( SPI& spi, bool spi_addr = 0, bool highspeed_variant = false, int nINT = D7, int DRDY = D4, int SYN = D2, int nRESET = DISABLED_PIN, int SYNCDAC = D3 );
+
+	/** Destractor */
+	virtual ~NAFE33352_UIOM();
 };
 
 

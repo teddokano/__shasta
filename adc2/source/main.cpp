@@ -1,14 +1,12 @@
 #include	"r01lib.h"
-#include	"afe/NAFE33352.h"
+#include	"afe/NAFE33352_UIOM.h"
 
 SPI				spi( ARD_MOSI, ARD_MISO, ARD_SCK, ARD_CS );	//	MOSI, MISO, SCLK, CS
-NAFE33352		shasta( spi, 0 );
+NAFE33352_UIOM	shasta( spi, 0 );
 
-InterruptIn		d4( D4 );
-
-using enum NAFE33352::Register16;
-using enum NAFE33352::Register24;
-using enum NAFE33352::Command;
+using enum NAFE33352_UIOM::Register16;
+using enum NAFE33352_UIOM::Register24;
+using enum NAFE33352_UIOM::Command;
 
 constexpr double	ref_point	=  20.00;
 
@@ -27,15 +25,12 @@ void set_current( double c )
 
 int main( void )
 {
-//	NAFE33352		shasta( spi, 0, false, D2, D4 );
-
 	printf( "***** Hello, SHASTA board! *****\r\n" );
 
 	spi.frequency( 1'000'000 );
 	spi.mode( 1 );
 
 	shasta.begin();
-//	shasta.set_DRDY_callback( cb );
 
 #if 1
 	printf( "Part number          = 0x%04X%04X%02\r\n", shasta.reg( PN2 ), shasta.reg( PN1 ), shasta.reg( PN0_REV ) >> 8 );
@@ -51,7 +46,6 @@ int main( void )
 
 	shasta.dac.configure( 0x6041, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
 	shasta.reg( AO_DATA, -(1 << 22) );
-
 
 	shasta.logical_channel[  0 ].configure( 0x0020, 0x50B4, 0x5000 );
 	shasta.logical_channel[  1 ].configure( 0x0080, 0x5064, 0x5000 );

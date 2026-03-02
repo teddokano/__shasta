@@ -59,8 +59,8 @@ void NAFE33352_Base::DAC::configure( const uint16_t (&cc)[ 6 ] )
 
 /* NAFE33352_Base class ******************************************/
 
-NAFE33352_Base::NAFE33352_Base( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET ) 
-	: AFE_base( spi, spi_addr, hsv, nINT, DRDY, SYN, nRESET )
+NAFE33352_Base::NAFE33352_Base( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET, int SYNCDAC )
+	: AFE_base( spi, spi_addr, hsv, nINT, DRDY, SYN, nRESET, SYNCDAC )
 {
 	for ( auto i = 0; i < 16; i++ )
 	{
@@ -95,6 +95,7 @@ void NAFE33352_Base::reset( bool hardware_reset )
 {
 	if ( hardware_reset )
 	{
+		printf( "warning: UIOM doesn't have hardware RESET pin on the board. This reset will be ignored\r\n" );
 		pin_nRESET	= 0;
 		wait( 0.001 );
 		pin_nRESET	= 1;
@@ -114,7 +115,7 @@ void NAFE33352_Base::reset( bool hardware_reset )
 			return;
 	}
 	
-	panic( "NAFE13388 couldn't get ready. Check power supply or pin conections\r\n" );
+	panic( "NAFE33352 couldn't get ready. Check power supply or pin conections\r\n" );
 }
 
 void NAFE33352_Base::open_dac_output( const uint16_t (&cc)[ 6 ] )
@@ -415,13 +416,10 @@ float NAFE33352_Base::temperature( void )
 	return reg( DIE_TEMP ) / 64.0;
 }
 
+/* NAFE33352 class ******************************************/
 
-
-
-/* NAFE13388 class ******************************************/
-
-NAFE33352::NAFE33352( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET ) 
-	: NAFE33352_Base( spi, spi_addr, hsv, nINT, DRDY, SYN, nRESET )
+NAFE33352::NAFE33352( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET, int SYNCDAC )
+	: NAFE33352_Base( spi, spi_addr, hsv, nINT, DRDY, SYN, nRESET, SYNCDAC )
 {
 }
 
@@ -429,4 +427,13 @@ NAFE33352::~NAFE33352()
 {
 }
 
-//double	NAFE13388::coeff_uV[ 16 ];
+/* NAFE33352 class ******************************************/
+
+NAFE33352_UIOM::NAFE33352_UIOM( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET, int SYNCDAC )
+	: NAFE33352_Base( spi, spi_addr, hsv, nINT, DRDY, SYN, nRESET, SYNCDAC )
+{
+}
+
+NAFE33352_UIOM::~NAFE33352_UIOM()
+{
+}
