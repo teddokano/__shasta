@@ -151,15 +151,15 @@ public:
 	 *
 	 * @param data_ptr pointer to array to store ADC data
 	 */
-	virtual void	read( microvolt_t *data );
+	virtual void	read( volt_t *data );
 
 	/** Read ADC for all channel
 	 *
 	 * @param data_vctr vector object to store ADC data
 	 */
-	virtual void	read( std::vector<microvolt_t>& data_vctr );
+	virtual void	read( std::vector<volt_t>& data_vctr );
 
-	inline double raw2uv( int ch, raw_t value )
+	inline double raw2v( int ch, raw_t value )
 	{
 		if ( mux_setting[ ch ] == 13 )
 			return	value - (double)(1 << 24) * 20.00 * 2.50 / (12.50 * (double)(1 << 24)) -1.50;

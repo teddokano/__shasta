@@ -13,7 +13,7 @@
  *  #include	"r01lib.h"
  *  #include	"afe/NAFE13388_UIM.h"
  *  
- *  using	microvolt_t	= NAFE13388_UIM::microvolt_t;
+ *  using	volt_t	= NAFE13388_UIM::volt_t;
  *  
  *   SPI				spi( ARD_MOSI, ARD_MISO, ARD_SCK, ARD_CS );	//	MOSI, MISO, SCLK, CS
  *   NAFE13388_UIM	afe( spi );
@@ -34,8 +34,8 @@
  *  
  *  	 printf( "\r\nenabled logical channel(s) %2d\r\n", afe.enabled_logical_channels() );
  *  
- *  	 microvolt_t	data0;
- *  	 microvolt_t	data1;
+ *  	 volt_t	data0;
+ *  	 volt_t	data1;
  *  
  *  	 while ( true )
  *  	 {
@@ -66,8 +66,9 @@ class AFE_base : public SPI_for_AFE
 {
 public:
 	/** ADC readout types */
-	using raw_t			= int32_t;
-	using microvolt_t	= double;
+	using raw_t		= int32_t;
+	using volt_t	= double;
+	using ampere_t	= double;
 
 	/** Constructor to create a AFE_base instance */
 	AFE_base( SPI& spi, bool spi_addr, bool highspeed_variant, int nINT, int DRDY, int SYN, int nRESET, int SYNCDAC  );
@@ -212,7 +213,10 @@ public:
 	 * @param ch logical channel number to select its gain coefficient
 	 * @param value ADC read value
 	 */
-	virtual double raw2uv( int ch, raw_t value )	= 0;
+	inline double raw2uv( int ch, raw_t value )
+	{
+		return raw2v( ch, value ) * 1e6;
+	}
 	
 	/** Convert raw output to milli-volt
 	 *
@@ -221,7 +225,7 @@ public:
 	 */
 	inline double raw2mv( int ch, raw_t value )
 	{
-		return raw2uv( ch, value ) * 1e-3;
+		return raw2v( ch, value ) * 1e3;
 	}
 	
 	/** Convert raw output to volt
@@ -229,10 +233,7 @@ public:
 	 * @param ch logical channel number to select its gain coefficient
 	 * @param value ADC read value
 	 */
-	inline double raw2v( int ch, raw_t value )
-	{
-		return raw2uv( ch, value ) * 1e-6;
-	}
+	virtual double raw2v( int ch, raw_t value )	= 0;
 	
 	/** Coefficient to convert from ADC read value to micro-volt
 	 *
@@ -328,7 +329,7 @@ public:
 	template<class T> T read(void);
 		
 	operator AFE_base::raw_t(void);
-	operator AFE_base::microvolt_t(void);
+	operator AFE_base::volt_t(void);
 
 	template<class T> double operator+( T v ) { return (double)(*this) + (double)v; }
 	template<class T> double operator-( T v ) { return (double)(*this) - (double)v; }
@@ -463,15 +464,15 @@ public:
 	 *
 	 * @param data_ptr pointer to array to store ADC data
 	 */
-	virtual void	read( microvolt_t *data );
+	virtual void	read( volt_t *data );
 
 	/** Read ADC for all channel
 	 *
 	 * @param data_vctr vector object to store ADC data
 	 */
-	virtual void	read( std::vector<microvolt_t>& data_vctr );
+	virtual void	read( std::vector<volt_t>& data_vctr );
 
-	inline double raw2uv( int ch, raw_t value )
+	inline double raw2v( int ch, raw_t value )
 	{
 		double	v	= value * coeff_uV[ ch ];
 
@@ -485,13 +486,13 @@ public:
 					break;
 				case REFCOARSE_REF2:
 				case VADD_REF2:
-					return 2.00 * (v + 1.5e6);
+					return 2.00 * (v + 1.50);
 					break;
 				case VHDD_REF2:
-					return 32.00 * (v + 0.25e6);
+					return 32.00 * (v + 0.25);
 					break;
 				case REF2_VHSS:
-					return -32.00 * (v - 0.25e6);
+					return -32.00 * (v - 0.25);
 					break;
 			}
 		}		

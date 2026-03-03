@@ -57,7 +57,6 @@ void NAFE33352_Base::DAC::configure( const uint16_t (&cc)[ 6 ] )
 
 void NAFE33352_Base::DAC::configure( ModeSelect mode, double full_scale_range )
 {
-	double		default_full_scale_range	= 0.00;
 	uint16_t	default_dac_setting[ 6 ]	= { 0x6000, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 };
 	
 	output_mode	= mode;
@@ -236,7 +235,7 @@ void NAFE33352_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 			break;
 	}
 	
-	coeff_uV[ ch ]		= coeff * 1e6;
+	coeff_uV[ ch ]		= coeff;
 	
 	if ( pga_on && !pga_enabled )
 	{
@@ -396,7 +395,7 @@ void NAFE33352_Base::read( std::vector<raw_t>& data_vctr )
 	std::copy( raw_data, raw_data + enabled_channels, data_vctr.begin() );
 }
 
-void NAFE33352_Base::read( microvolt_t *data )
+void NAFE33352_Base::read( volt_t *data )
 {
 	raw_t	raw_data[ 16 ];
 	
@@ -406,7 +405,7 @@ void NAFE33352_Base::read( microvolt_t *data )
 		data[ i ]	= raw2uv( sequence_order[ i ], raw_data[ i ] );
 }
 
-void NAFE33352_Base::read( std::vector<microvolt_t>& data_vctr )
+void NAFE33352_Base::read( std::vector<volt_t>& data_vctr )
 {
 	raw_t	raw_data[ 16 ];
 	

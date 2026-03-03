@@ -34,10 +34,10 @@ AFE_base::raw_t	LogicalChannel_Base::read( void )
 }
 
 template<>
-AFE_base::microvolt_t LogicalChannel_Base::read( void )
+AFE_base::volt_t LogicalChannel_Base::read( void )
 {
 	AFE_base::raw_t	v	= read<AFE_base::raw_t>();
-	return afe_ptr->raw2uv( ch_number, v );
+	return afe_ptr->raw2v( ch_number, v );
 }
 
 LogicalChannel_Base::operator AFE_base::raw_t( void )
@@ -45,9 +45,9 @@ LogicalChannel_Base::operator AFE_base::raw_t( void )
 	return read<AFE_base::raw_t>();
 }
 
-LogicalChannel_Base::operator AFE_base::microvolt_t( void )
+LogicalChannel_Base::operator AFE_base::volt_t( void )
 {
-	return read<AFE_base::microvolt_t>();
+	return read<AFE_base::volt_t>();
 }
 
 NAFE13388_Base::LogicalChannel::LogicalChannel() : LogicalChannel_Base()
@@ -252,12 +252,12 @@ void NAFE13388_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 
 	if ( cc[ 0 ] & 0x0010 )
 	{
-		coeff_uV[ ch ]		= ((10.0 / (double)(1L << 24)) / pga_gain[ (cc[ 0 ] >> 5) & 0x7 ]) * 1e6;
+		coeff_uV[ ch ]		= ((10.0 / (double)(1L << 24)) / pga_gain[ (cc[ 0 ] >> 5) & 0x7 ]);
 		mux_setting[ ch ]	= HV_MUX;
 	}
 	else
 	{
-		coeff_uV[ ch ]		= ((10.0 / (double)(1L << 24)) / 2.5) * 1e6;
+		coeff_uV[ ch ]		= ((10.0 / (double)(1L << 24)) / 2.5);
 		mux_setting[ ch ]	= (cc[ 0 ] >> 1) & 0x7;
 	}
 	
@@ -412,24 +412,24 @@ void NAFE13388_Base::read( std::vector<raw_t>& data_vctr )
 	std::copy( raw_data, raw_data + enabled_channels, data_vctr.begin() );
 }
 
-void NAFE13388_Base::read( microvolt_t *data )
+void NAFE13388_Base::read( volt_t *data )
 {
 	raw_t	raw_data[ 16 ];
 	
 	read( raw_data );
 	
 	for ( auto i = 0; i < enabled_channels; i++ )
-		data[ i ]	= raw2uv( sequence_order[ i ], raw_data[ i ] );
+		data[ i ]	= raw2v( sequence_order[ i ], raw_data[ i ] );
 }
 
-void NAFE13388_Base::read( std::vector<microvolt_t>& data_vctr )
+void NAFE13388_Base::read( std::vector<volt_t>& data_vctr )
 {
 	raw_t	raw_data[ 16 ];
 	
 	read( raw_data );
 	
 	for ( auto i = 0; i < enabled_channels; i++ )
-		data_vctr[ i ]	= raw2uv( sequence_order[ i ], raw_data[ i ] );
+		data_vctr[ i ]	= raw2v( sequence_order[ i ], raw_data[ i ] );
 }
 
 void NAFE13388_Base::command( uint16_t com )
@@ -672,5 +672,3 @@ void NAFE13388_UIM::blink_leds( void )
 			}
 		);
 }
-
-//double	NAFE13388::coeff_uV[ 16 ];

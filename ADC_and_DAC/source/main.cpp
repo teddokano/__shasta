@@ -51,11 +51,11 @@ int main( void )
 	{
 		for ( auto i = 0; i < shasta.enabled_logical_channels() - 1; i++ )
 		{
-			data	= shasta.logical_channel[ i ] * 1e-6;
+			data	= shasta.logical_channel[ i ];
 			printf( "    %lfV", data );
 		}
 
-		data	= shasta.logical_channel[ shasta.enabled_logical_channels() - 1 ] * 1e-6 / 50.00;
+		data	= shasta.logical_channel[ shasta.enabled_logical_channels() - 1 ] / 50.00;
 		printf( "    %lfA", data );
 
 		printf( "    AIO_STATUS = 0x%04X\r\n", shasta.reg( AIO_STATUS ) );
