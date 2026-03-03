@@ -61,7 +61,8 @@ public:
 	{
 	public:
 		enum class ModeSelect : uint16_t {
-			VOLTAGE		= 0,
+			HI_Z		= 0,
+			VOLTAGE,
 			CURRENT,
 			CURRENT_RECAL
 		};
@@ -71,7 +72,8 @@ public:
 		
 		void	configure( const uint16_t (&cc)[ 6 ] );
 		void	configure( uint16_t cc0, uint16_t cc1, uint16_t cc2, uint16_t cc3, uint16_t cc4, uint16_t cc5 );
-		void	mode( ModeSelect mode, double fs = 0.00 );
+		void	configure( ModeSelect mode, double full_scale_range = 0.00 );
+		void 	configure( double full_scale_range );
 		void	output( double value );
 		DAC&	operator=( double value );
 		

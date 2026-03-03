@@ -44,29 +44,6 @@ NAFE33352_Base::DAC::~DAC()
 {
 }
 
-void NAFE33352_Base::DAC::mode( ModeSelect mode, double fs )
-{
-	output_mode	= mode;
-	
-	if ( 0.0 < fs )
-		full_scale	= fs;
-	else
-	{
-		if ( output_mode == NAFE33352_Base::DAC::ModeSelect::VOLTAGE )
-			full_scale	= 12.50;
-		else if ( output_mode == NAFE33352_Base::DAC::ModeSelect::CURRENT )
-			full_scale	= 0.025 / 0.95;
-		else if ( output_mode == NAFE33352_Base::DAC::ModeSelect::CURRENT_RECAL )
-			full_scale	= 0.025;
-	}
-}
-
-void NAFE33352_Base::DAC::output( double value )
-{
-	afe_ptr->dac_out( value, full_scale, 18 );
-}
-
-
 void NAFE33352_Base::DAC::configure( uint16_t cc0, uint16_t cc1, uint16_t cc2, uint16_t cc3, uint16_t cc4, uint16_t cc5 )
 {
 	const uint16_t	tmp_ch_config[ 6 ]	= { cc0, cc1, cc2, cc3, cc4, cc5 };
@@ -76,6 +53,49 @@ void NAFE33352_Base::DAC::configure( uint16_t cc0, uint16_t cc1, uint16_t cc2, u
 void NAFE33352_Base::DAC::configure( const uint16_t (&cc)[ 6 ] )
 {
 	afe_ptr->open_dac_output( cc );
+}
+
+void NAFE33352_Base::DAC::configure( ModeSelect mode, double full_scale_range )
+{
+	double		default_full_scale_range	= 0.00;
+	uint16_t	default_dac_setting[ 6 ]	= { 0x6000, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 };
+	
+	output_mode	= mode;
+	
+	switch ( output_mode )
+	{
+		case NAFE33352_Base::DAC::ModeSelect::HI_Z:
+			full_scale					= 12.50;
+			default_dac_setting[ 0 ]   |= 0x0002;
+			break;
+		case NAFE33352_Base::DAC::ModeSelect::VOLTAGE:
+			full_scale					= 12.50;
+			default_dac_setting[ 0 ]   |= 0x0040;
+			break;
+		case NAFE33352_Base::DAC::ModeSelect::CURRENT:
+			full_scale					= 0.025 / 0.95;
+			default_dac_setting[ 0 ]   |= 0x0061;
+			break;
+		case NAFE33352_Base::DAC::ModeSelect::CURRENT_RECAL:
+			full_scale					= 0.025;
+			default_dac_setting[ 0 ]   |= 0x0061;
+			break;
+	}
+
+	if ( 0.0 < full_scale_range )	//	overwrite fullscale range if it is specified
+		full_scale	= full_scale_range;
+	
+	configure( default_dac_setting );
+}
+
+void NAFE33352_Base::DAC::configure( double full_scale_range )
+{
+	full_scale	= full_scale_range;
+}
+
+void NAFE33352_Base::DAC::output( double value )
+{
+	afe_ptr->dac_out( value, full_scale, 18 );
 }
 
 NAFE33352_Base::DAC& NAFE33352_Base::DAC::operator=( double value )
@@ -172,7 +192,7 @@ void NAFE33352_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 			coeff	= (20.00 * 2.50) / (12.5 * pow2_24);
 			break;
 		case 1:
-			coeff	= (20.00 * 2.50) / ((cc[ 0 ] & 0x0200 ? 16.00 : 1.00) * pow2_24);
+			coeff	= (20.00 * 2.50) / ((cc[ 0 ] & 0x0100 ? 16.00 : 1.00) * pow2_24);
 			pga_on	= true;
 			break;
 		case 2:
