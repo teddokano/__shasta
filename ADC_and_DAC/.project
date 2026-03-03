@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>adc2</name>
+	<name>ADC_and_DAC</name>
 	<comment></comment>
 	<projects>
 		<project>_r01lib_frdm_mcxa153</project>
