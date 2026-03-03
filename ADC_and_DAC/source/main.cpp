@@ -29,12 +29,12 @@ int main( void )
 	printf( "GAINCOEF5 = %lf\r\n",   shasta.reg( GAIN_COEF5 ) / (double)0x400000  );
 #endif
 
-#if 0
+#if 1
 	shasta.dac.configure( VOLTAGE );
-	shasta.dac	= 5.00;
+	shasta.dac	= 5.00;			//	5V
 #else
 	shasta.dac.configure( CURRENT );
-	shasta.dac	= 0.02;
+	shasta.dac	= 20 * 1e-3;	//	20mA
 #endif
 
 	shasta.logical_channel[  0 ].configure( 0x0020, 0x50B4, 0x5000 );
