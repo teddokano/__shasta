@@ -7,6 +7,7 @@ NAFE33352_UIOM	shasta( spi, 0 );
 using enum NAFE33352_UIOM::Register16;
 using enum NAFE33352_UIOM::Register24;
 using enum NAFE33352_UIOM::Command;
+using enum NAFE33352_UIOM::DAC::ModeSelect;
 
 constexpr double	ref_point	=  20.00;
 
@@ -30,12 +31,12 @@ int main( void )
 
 #if 0
 	shasta.dac.configure( 0x6061, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
-	shasta.dac.mode( NAFE33352_Base::DAC::ModeSelect::CURRENT );
+	shasta.dac.mode( CURRENT );
 	shasta.dac.output( 0.02 );
 #else
 	shasta.dac.configure( 0x6041, 0x1000, 0x87FF, 0x8200, 0xE7FF, 0x0C00 );
-	shasta.dac.mode( NAFE33352_Base::DAC::ModeSelect::VOLTAGE );
-	shasta.dac.output( 3 );
+	shasta.dac.mode( VOLTAGE );
+	shasta.dac	= 5.00;
 #endif
 	shasta.logical_channel[  0 ].configure( 0x0020, 0x50B4, 0x5000 );
 	shasta.logical_channel[  1 ].configure( 0x0080, 0x5064, 0x5000 );
@@ -54,7 +55,7 @@ int main( void )
 			printf( "    %lfV", data );
 		}
 
-		printf( "status = 0x%04X\r\n", shasta.reg( AIO_STATUS ) );
+		printf( "    AIO_STATUS = 0x%04X\r\n", shasta.reg( AIO_STATUS ) );
 
 		wait( 1.0 );
 	}

@@ -73,7 +73,8 @@ public:
 		void	configure( uint16_t cc0, uint16_t cc1, uint16_t cc2, uint16_t cc3, uint16_t cc4, uint16_t cc5 );
 		void	mode( ModeSelect mode, double fs = 0.00 );
 		void	output( double value );
-	
+		DAC&	operator=( double value );
+		
 		NAFE33352_Base	*afe_ptr;
 	private:
 		ModeSelect		output_mode;

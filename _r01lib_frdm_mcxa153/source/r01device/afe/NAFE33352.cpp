@@ -78,6 +78,12 @@ void NAFE33352_Base::DAC::configure( const uint16_t (&cc)[ 6 ] )
 	afe_ptr->open_dac_output( cc );
 }
 
+NAFE33352_Base::DAC& NAFE33352_Base::DAC::operator=( double value )
+{
+	output( value );
+	return	*this;
+}
+
 
 
 /* NAFE33352_Base class ******************************************/
