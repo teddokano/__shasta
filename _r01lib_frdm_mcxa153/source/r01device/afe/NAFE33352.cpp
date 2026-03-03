@@ -481,6 +481,47 @@ float NAFE33352_Base::temperature( void )
 	return reg( DIE_TEMP ) / 64.0;
 }
 
+void NAFE33352_Base::reg_dump( RegVct reg_vctr )
+{
+	for ( auto r : reg_vctr )
+	{
+		if ( const NAFE33352_Base::Register24 *ap	= std::get_if<NAFE33352_Base::Register24>( &r ) )
+		{
+			printf( "0x%04X: 0x%06lX\r\n", static_cast<int>( *ap ), reg( *ap ) & 0xFFFFFF );
+		}
+		else if ( const NAFE33352_Base::Register16 *ap	= std::get_if<NAFE33352_Base::Register16>( &r ) )
+		{
+			printf( "0x%04X: 0x%04X\r\n", static_cast<int>( *ap ), reg( *ap ) );
+		}
+	}
+}
+
+void NAFE33352_Base::reg_dump( NAFE33352_Base::Register24 addr, int length )
+{
+	table_view( length, 4, [ & ]( int v ){ printf( "  %8ld @ 0x%04X", reg( v + addr ), v + (uint16_t)addr ); }, [](){ printf( "\r\n" ); });
+}
+
+void NAFE33352_Base::logical_ch_config_view( void )
+{
+	uint16_t en_ch_bitmap	= reg( AI_MULTI_CH_EN ) >> 8;
+	
+	for ( auto channel = 0; channel < 16; channel++ )
+	{	
+		printf( "  logical channel %2d : ", channel );
+
+		if ( en_ch_bitmap & (0x1 << channel) )
+		{
+			command( CMD_CH0 + channel );
+			table_view( 4, 4, [ this ]( int v ){ printf( "  0x%04X @0x%04X", reg( v + AI_CONFIG0 ), (uint16_t)(v + AI_CONFIG0) ); } );
+		}
+		else
+		{
+			printf(  "  (disabled)\r\n" );
+		}
+	}
+}
+
+
 /* NAFE33352 class ******************************************/
 
 NAFE33352::NAFE33352( SPI& spi, bool spi_addr, bool hsv, int nINT, int DRDY, int SYN, int nRESET, int SYNCDAC )

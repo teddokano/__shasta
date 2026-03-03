@@ -320,7 +320,11 @@ public:
 
 	using	RegisterVariant	= std::variant<Register16, Register24>;
 	using	RegVct			= std::vector<RegisterVariant>;
-	
+
+	void	reg_dump( RegVct reg_vctr );
+	void	reg_dump( Register24 addr, int length );
+	void	logical_ch_config_view( void );
+		
 	/** Command
 	 *	
 	 * @param com "Comand" type or uint16_t value

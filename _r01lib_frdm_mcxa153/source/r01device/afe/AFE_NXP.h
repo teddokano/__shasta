@@ -281,6 +281,7 @@ protected:
 	DigitalOut		pin_SYNCDAC;
 
 	int 			bit_count( uint32_t value );
+	void			table_view( int size, int cols, std::function<void(int)> view, std::function<void(void)> linefeed = nullptr );
 
 	/** Number of enabled logical channels */
 	int				enabled_channels;

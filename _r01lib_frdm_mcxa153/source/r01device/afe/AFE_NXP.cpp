@@ -193,6 +193,35 @@ void AFE_base::use_DRDY_trigger( bool use )
 		set_DRDY_callback( nullptr );
 }
 
+void AFE_base::table_view( int length, int cols, std::function<void(int)> value, std::function<void(void)> linefeed )
+{
+	const auto	raws	= (int)(length + cols - 1) / cols;
+	
+	for ( auto i = 0; i < raws; i++  )
+	{
+		if ( i )
+		{
+			if ( linefeed )
+				linefeed();
+			else
+				printf( "\r\n" );
+		}
+		
+		for ( auto j = 0; j < cols; j++  )
+		{
+			auto	index	= i + j * raws;
+			
+			if ( index < length  )
+				value( index );
+		}
+	}
+	
+	if ( linefeed )
+		linefeed();
+	else
+		printf( "\r\n" );
+}
+
 
 AFE_base::callback_fp_t	AFE_base::cbf_DRDY		= nullptr;
 

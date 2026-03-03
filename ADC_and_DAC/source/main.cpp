@@ -1,6 +1,5 @@
 #include	"r01lib.h"
 #include	"afe/NAFE33352_UIOM.h"
-#include	"utils.h"
 
 SPI				spi( ARD_MOSI, ARD_MISO, ARD_SCK, ARD_CS );	//	MOSI, MISO, SCLK, CS
 NAFE33352_UIOM	shasta( spi, 0 );
@@ -42,7 +41,7 @@ int main( void )
 	shasta.logical_channel[  3 ].configure( 0x0038, 0x2064, 0x5000 );
 	shasta.logical_channel[  4 ].configure( 0x0030, 0x2064, 0x5000 );
 
-	reg_dump( { PN2, PN1, PN0_REV, SERIAL1, SERIAL0, DIE_TEMP, SYS_CONFIG, SYS_STATUS } );
+	shasta.reg_dump( { PN2, PN1, PN0_REV, SERIAL1, SERIAL0, DIE_TEMP, SYS_CONFIG, SYS_STATUS } );
 
 //	shasta.use_DRDY_trigger( false );	//	default = true
 
