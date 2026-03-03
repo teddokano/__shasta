@@ -481,6 +481,7 @@ float NAFE33352_Base::temperature( void )
 	return reg( DIE_TEMP ) / 64.0;
 }
 
+#if 0
 void NAFE33352_Base::reg_dump( RegVct reg_vctr )
 {
 	for ( auto r : reg_vctr )
@@ -495,6 +496,23 @@ void NAFE33352_Base::reg_dump( RegVct reg_vctr )
 		}
 	}
 }
+#else
+void NAFE33352_Base::reg_dump( RegVct reg_vctr )
+{
+	table_view( reg_vctr.size(), 4, 	[ & ]( int v )
+										{
+											if ( const NAFE33352_Base::Register24 *ap	= std::get_if<NAFE33352_Base::Register24>( &(reg_vctr[ v ]) ) )
+												printf( "    0x%04X: 0x%06lX",  static_cast<int>( *ap ), reg( *ap ) & 0xFFFFFF );
+											else if ( const NAFE33352_Base::Register16 *ap	= std::get_if<NAFE33352_Base::Register16>( &(reg_vctr[ v ]) ) )
+												printf( "    0x%04X: 0x  %04X", static_cast<int>( *ap ), reg( *ap ) );
+										}, 
+										[]()
+										{
+											printf( "\r\n" ); 
+										}
+						   );
+}
+#endif
 
 void NAFE33352_Base::reg_dump( NAFE33352_Base::Register24 addr, int length )
 {
