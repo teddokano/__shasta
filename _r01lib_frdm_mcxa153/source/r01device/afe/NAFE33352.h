@@ -323,7 +323,6 @@ public:
 
 	void	reg_dump( RegVct reg_vctr );
 	void	reg_dump( Register24 addr, int length );
-	
 	void	logical_ch_config_view( void );
 		
 	/** Command

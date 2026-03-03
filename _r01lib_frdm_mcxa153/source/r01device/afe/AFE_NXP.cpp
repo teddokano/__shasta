@@ -651,6 +651,64 @@ void NAFE13388_Base::blink_leds( void )
 }
 
 
+#if 0
+void NAFE13388_Base::reg_dump( RegVct reg_vctr )
+{
+	for ( auto r : reg_vctr )
+	{
+		if ( const NAFE13388_Base::Register24 *ap	= std::get_if<NAFE13388_Base::Register24>( &r ) )
+		{
+			printf( "0x%04X: 0x%06lX\r\n", static_cast<int>( *ap ), reg( *ap ) & 0xFFFFFF );
+		}
+		else if ( const NAFE13388_Base::Register16 *ap	= std::get_if<NAFE13388_Base::Register16>( &r ) )
+		{
+			printf( "0x%04X: 0x%04X\r\n", static_cast<int>( *ap ), reg( *ap ) );
+		}
+	}
+}
+#else
+void NAFE13388_Base::reg_dump( RegVct reg_vctr )
+{
+	table_view( reg_vctr.size(), 4, 	[ & ]( int v )
+										{
+											if ( const NAFE13388_Base::Register24 *ap	= std::get_if<NAFE13388_Base::Register24>( &(reg_vctr[ v ]) ) )
+												printf( "    0x%04X: 0x%06lX",  static_cast<int>( *ap ), reg( *ap ) & 0xFFFFFF );
+											else if ( const NAFE13388_Base::Register16 *ap	= std::get_if<NAFE13388_Base::Register16>( &(reg_vctr[ v ]) ) )
+												printf( "    0x%04X: 0x  %04X", static_cast<int>( *ap ), reg( *ap ) );
+										}, 
+										[]()
+										{
+											printf( "\r\n" ); 
+										}
+						   );
+}
+#endif
+
+void NAFE13388_Base::reg_dump( NAFE13388_Base::Register24 addr, int length )
+{
+	table_view( length, 4, [ & ]( int v ){ printf( "  %8ld @ 0x%04X", reg( v + addr ), v + (uint16_t)addr ); }, [](){ printf( "\r\n" ); });
+}
+
+void NAFE13388_Base::logical_ch_config_view( void )
+{
+	uint16_t en_ch_bitmap	= reg( CH_CONFIG4 );
+	
+	for ( auto channel = 0; channel < 16; channel++ )
+	{	
+		printf( "  logical channel %2d : ", channel );
+
+		if ( en_ch_bitmap & (0x1 << channel) )
+		{
+			command( channel );
+			table_view( 4, 4, [ this ]( int v ){ printf( "  0x%04X @0x%04X", reg( v + CH_CONFIG0 ), (uint16_t)(v + CH_CONFIG0) ); } );
+		}
+		else
+		{
+			printf(  "  (disabled)\r\n" );
+		}
+	}
+}
+
 
 /* NAFE13388 class ******************************************/
 
