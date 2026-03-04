@@ -16,6 +16,29 @@ using enum	NAFE13388_UIM::Command;
 
 double	AFE_base::delay_accuracy	= 1.1;
 
+/*
+ * AFE_base low-level register helper implementations
+ */
+void AFE_base::reg_write16(uint16_t addr, uint16_t value)
+{
+	write_r16(addr, value);
+}
+
+void AFE_base::reg_write24(uint16_t addr, uint32_t value)
+{
+	write_r24(addr, value);
+}
+
+uint16_t AFE_base::reg_read16(uint16_t addr)
+{
+	return read_r16(addr);
+}
+
+uint32_t AFE_base::reg_read24(uint16_t addr)
+{
+	return read_r24(addr);
+}
+
 
 void LogicalChannel_Base::enable( void )
 {
@@ -268,7 +291,7 @@ void NAFE13388_Base::reset( bool hardware_reset )
 	for ( auto i = 0; i < RETRY; i++ )
 	{
 		wait( 0.003 );
-		if ( reg( SYS_STATUS0 ) & CHIP_READY )
+		if ( this->reg( SYS_STATUS0 ) & CHIP_READY )
 			return;
 	}
 	
@@ -291,7 +314,7 @@ void NAFE13388_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 	}
 	
 	for ( auto i = 0; i < 4; i++ )
-		reg( CH_CONFIG0 + i, cc[ i ] );
+		this->reg( CH_CONFIG0 + i, cc[ i ] );
 	
 	enable_logical_channel( ch );
 	
@@ -337,8 +360,8 @@ double NAFE13388_Base::calc_delay( int ch )
 	
 	command( ch );
 
-	uint16_t ch_config1	= reg( CH_CONFIG1 );
-	uint16_t ch_config2	= reg( CH_CONFIG2 );
+	uint16_t ch_config1	= this->reg( CH_CONFIG1 );
+	uint16_t ch_config2	= this->reg( CH_CONFIG2 );
 	
 	uint8_t		adc_data_rate		= (ch_config1 >>  3) & 0x001F;
 	uint8_t		adc_sinc			= (ch_config1 >>  0) & 0x0007;
@@ -398,7 +421,7 @@ void NAFE13388_Base::close_logical_channel( int ch )
 
 void NAFE13388_Base::close_logical_channel( void )
 {	
-	reg( CH_CONFIG4, 0x0000 );
+	this->reg( CH_CONFIG4, 0x0000 );
 	channel_info_update( 0x0000 );
 }
 
@@ -425,7 +448,7 @@ void NAFE13388_Base::DRDY_by_sequencer_done( bool flag )
 
 int32_t NAFE13388_Base::read( int ch )
 {
-	return reg( CH_DATA0 + ch );
+	return this->reg( CH_DATA0 + ch );
 }
 
 void NAFE13388_Base::read( raw_t *data )
@@ -466,48 +489,31 @@ void NAFE13388_Base::command( uint16_t com )
 	write_r16( com );
 }
 
-void NAFE13388_Base::reg( Register16 r, uint16_t value )
-{
-	write_r16( static_cast<uint16_t>( r ), value );
-}
-
-void NAFE13388_Base::reg( Register24 r, uint32_t value )
-{
-	write_r24( static_cast<uint16_t>( r ), value );
-}
-
-uint16_t NAFE13388_Base::reg( Register16 r )
-{
-	return read_r16( static_cast<uint16_t>( r ) );
-}
-
-uint32_t NAFE13388_Base::reg( Register24 r )
-{
-	return read_r24( static_cast<uint16_t>( r ) );
-}
+// NAFE13388_Base reg() functions are now provided by templated
+// implementations in the header (`AFE_NXP.h`).
 
 uint32_t NAFE13388_Base::part_number( void )
 {
-	return (static_cast<uint32_t>( reg( PN2 ) ) << 16) | reg( PN1 );
+	return (static_cast<uint32_t>( this->reg( PN2 ) ) << 16) | this->reg( PN1 );
 }
 
 uint8_t NAFE13388_Base::revision_number( void )
 {
-	return reg( PN0 ) & 0xF;
+	return this->reg( PN0 ) & 0xF;
 }
 
 uint64_t NAFE13388_Base::serial_number( void )
 {
 	uint64_t	serial_number;
 
-	serial_number	  = reg( SERIAL1 );
+	serial_number	  = this->reg( SERIAL1 );
 	serial_number	<<=  24;
-	return serial_number | reg( SERIAL0 );
+	return serial_number | this->reg( SERIAL0 );
 }
 			
 float NAFE13388_Base::temperature( void )
 {
-	return reg( DIE_TEMP ) / 64.0;
+	return this->reg( DIE_TEMP ) / 64.0;
 }
 
 void NAFE13388_Base::gain_offset_coeff( const ref_points &ref )
@@ -526,8 +532,8 @@ void NAFE13388_Base::gain_offset_coeff( const ref_points &ref )
 	double	custom_gain			= dv_slope * (fullscale_voltage / fullscale_data);
 	double	custom_offset		= (dv_slope * ref.low.voltage - ref.low.data) / custom_gain;
 	
-	int32_t	gain_coeff_cal		= reg( GAIN_COEFF0   + ref.cal_index );
-	int32_t	offsset_coeff_cal	= reg( OFFSET_COEFF0 + ref.cal_index );
+	int32_t	gain_coeff_cal		= this->reg( GAIN_COEFF0   + ref.cal_index );
+	int32_t	offsset_coeff_cal	= this->reg( OFFSET_COEFF0 + ref.cal_index );
 	int32_t	gain_coeff_new		= round( gain_coeff_cal * custom_gain );
 	int32_t	offset_coeff_new	= round( custom_offset - offsset_coeff_cal );
 
@@ -538,8 +544,8 @@ void NAFE13388_Base::gain_offset_coeff( const ref_points &ref )
 	printf( "offset_coeff_new = %8ld\r\n", offset_coeff_new );
 #endif
 	
-	reg( GAIN_COEFF0   + ref.coeff_index, gain_coeff_new   );
-	reg( OFFSET_COEFF0 + ref.coeff_index, offset_coeff_new );
+	this->reg( GAIN_COEFF0   + ref.coeff_index, gain_coeff_new   );
+	this->reg( OFFSET_COEFF0 + ref.coeff_index, offset_coeff_new );
 }
 
 int NAFE13388_Base::self_calibrate( int pga_gain_index, int channel_selection, int input_select, double reference_source_voltage, bool use_positive_side )
@@ -552,14 +558,14 @@ int NAFE13388_Base::self_calibrate( int pga_gain_index, int channel_selection, i
 	//	logical channel selection to perform the self-calibration
 	//	if the chennel in-use, save channel setting to temporal memory
 	
-	if ( reg( CH_CONFIG4 ) & (0x1 << channel_selection) )
+	if ( this->reg( CH_CONFIG4 ) & (0x1 << channel_selection) )
 	{
 		channel_in_use	= true;
 		
 		command( channel_selection );
 
 		for ( auto i = 0; i < 4; i++ )
-			tmp_ch_config[ i ]	= reg( CH_CONFIG0 + i );
+			tmp_ch_config[ i ]	= this->reg( CH_CONFIG0 + i );
 	}
 	
 	//	if user doesn't specify the channel and voltage, use REFH or REFL
@@ -569,7 +575,7 @@ int NAFE13388_Base::self_calibrate( int pga_gain_index, int channel_selection, i
 		bool	low_gain	= (gain_index <= low_gain_index);
 
 		input_select				= low_gain ? 0x5 : 0x6;
-		reference_source_voltage	= (reg( low_gain ? OPT_COEF1 : OPT_COEF2 ) * 5.00) / (double)(1 << 24);
+		reference_source_voltage	= (this->reg( low_gain ? OPT_COEF1 : OPT_COEF2 ) * 5.00) / (double)(1 << 24);
 
 #if 1
 		printf( "==== self-calibration for PGA gain setting: x%3.1lf\r\n", pga_gain[ gain_index ] );
@@ -597,8 +603,8 @@ int NAFE13388_Base::self_calibrate( int pga_gain_index, int channel_selection, i
 	constexpr raw_t	default_gain_coeff_value	= 0x1 << 22;
 	constexpr raw_t	default_offset_coeff_value	= 0;
 
-	reg( GAIN_COEFF0   + gain_index, default_gain_coeff_value   );
-	reg( OFFSET_COEFF0 + gain_index, default_offset_coeff_value );
+	this->reg( GAIN_COEFF0   + gain_index, default_gain_coeff_value   );
+	this->reg( OFFSET_COEFF0 + gain_index, default_offset_coeff_value );
 	
 	//	measure the logical channel with those different 3 settings
 	
@@ -633,8 +639,8 @@ int NAFE13388_Base::self_calibrate( int pga_gain_index, int channel_selection, i
 	
 	//	setting registers: GAIN_COEFF[n] and OFFSET_COEFF[n]
 	
-	reg( GAIN_COEFF0   + gain_index, (uint32_t)(default_gain_coeff_value * calibrated_gain) );
-	reg( OFFSET_COEFF0 + gain_index, default_offset_coeff_value + data_COM );
+	this->reg( GAIN_COEFF0   + gain_index, (uint32_t)(default_gain_coeff_value * calibrated_gain) );
+	this->reg( OFFSET_COEFF0 + gain_index, default_offset_coeff_value + data_COM );
 
 	//	if the channel was in-use, revert the setting
 	
@@ -651,47 +657,11 @@ void NAFE13388_Base::blink_leds( void )
 }
 
 
-#if 0
-void NAFE13388_Base::reg_dump( RegVct reg_vctr )
-{
-	for ( auto r : reg_vctr )
-	{
-		if ( const NAFE13388_Base::Register24 *ap	= std::get_if<NAFE13388_Base::Register24>( &r ) )
-		{
-			printf( "0x%04X: 0x%06lX\r\n", static_cast<int>( *ap ), reg( *ap ) & 0xFFFFFF );
-		}
-		else if ( const NAFE13388_Base::Register16 *ap	= std::get_if<NAFE13388_Base::Register16>( &r ) )
-		{
-			printf( "0x%04X: 0x%04X\r\n", static_cast<int>( *ap ), reg( *ap ) );
-		}
-	}
-}
-#else
-void NAFE13388_Base::reg_dump( RegVct reg_vctr )
-{
-	table_view( reg_vctr.size(), 4, 	[ & ]( int v )
-										{
-											if ( const NAFE13388_Base::Register24 *ap	= std::get_if<NAFE13388_Base::Register24>( &(reg_vctr[ v ]) ) )
-												printf( "    0x%04X: 0x%06lX",  static_cast<int>( *ap ), reg( *ap ) & 0xFFFFFF );
-											else if ( const NAFE13388_Base::Register16 *ap	= std::get_if<NAFE13388_Base::Register16>( &(reg_vctr[ v ]) ) )
-												printf( "    0x%04X: 0x  %04X", static_cast<int>( *ap ), reg( *ap ) );
-										}, 
-										[]()
-										{
-											printf( "\r\n" ); 
-										}
-						   );
-}
-#endif
-
-void NAFE13388_Base::reg_dump( NAFE13388_Base::Register24 addr, int length )
-{
-	table_view( length, 4, [ & ]( int v ){ printf( "  %8ld @ 0x%04X", reg( v + addr ), v + (uint16_t)addr ); }, [](){ printf( "\r\n" ); });
-}
+// reg_dump implementations are provided generically in AFE_base (template)
 
 void NAFE13388_Base::logical_ch_config_view( void )
 {
-	uint16_t en_ch_bitmap	= reg( CH_CONFIG4 );
+	uint16_t en_ch_bitmap	= this->reg( CH_CONFIG4 );
 	
 	for ( auto channel = 0; channel < 16; channel++ )
 	{	
@@ -700,7 +670,7 @@ void NAFE13388_Base::logical_ch_config_view( void )
 		if ( en_ch_bitmap & (0x1 << channel) )
 		{
 			command( channel );
-			table_view( 4, 4, [ this ]( int v ){ printf( "  0x%04X @0x%04X", reg( v + CH_CONFIG0 ), (uint16_t)(v + CH_CONFIG0) ); } );
+			table_view( 4, 4, [ this ]( int v ){ printf( "  0x%04X @0x%04X", this->reg( v + CH_CONFIG0 ), (uint16_t)(v + CH_CONFIG0) ); } );
 		}
 		else
 		{
@@ -739,12 +709,12 @@ void NAFE13388_UIM::blink_leds( void )
 			0x2000, 0x4000, 0x2000, 0x1000, 0x0800, 0x0400, 0x0200, 0x0080,
 			0x0100, 0x0040,
 	};
-	reg( GPIO_CONFIG0, 0xFFC0 );
-	reg( GPIO_CONFIG1, 0xFFC0 );
-	reg( GPIO_CONFIG2, 0x0000 );
+	this->reg( GPIO_CONFIG0, 0xFFC0 );
+	this->reg( GPIO_CONFIG1, 0xFFC0 );
+	this->reg( GPIO_CONFIG2, 0x0000 );
 
 	for ( auto i = 0; i < 2; i++ )
-		for_each( pattern.begin(), pattern.end(), [ this ]( auto p ){ reg( GPO_DATA, p ); wait( 0.02 ); } );
+		for_each( pattern.begin(), pattern.end(), [ this ]( auto p ){ this->reg( GPO_DATA, p ); wait( 0.02 ); } );
 
 	pattern.resize( 10 );
 	uint16_t	pv	= 0;
@@ -755,7 +725,7 @@ void NAFE13388_UIM::blink_leds( void )
 			pattern.end(),
 			[ &pv, i, this ]( auto p ){
 				pv	= (i % 2) ? pv & ~p : pv | p;
-				reg( GPO_DATA, pv ); wait( 0.02 );
+				this->reg( GPO_DATA, pv ); wait( 0.02 );
 			}
 		);
 }

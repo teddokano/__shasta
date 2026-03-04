@@ -131,10 +131,10 @@ void NAFE33352_Base::boot( void )
 	
 	DRDY_by_sequencer_done( true );
 	
-	reg( SYS_CONFIG,        0x0000 );
-	reg( CK_SRC_SEL_CONFIG, 0x0000 );
+	this->reg( SYS_CONFIG,        0x0000 );
+	this->reg( CK_SRC_SEL_CONFIG, 0x0000 );
 
-	reg( AI_SYSCFG,         0x0800 );
+	this->reg( AI_SYSCFG,         0x0800 );
 
 
 }
@@ -159,7 +159,7 @@ void NAFE33352_Base::reset( bool hardware_reset )
 	for ( auto i = 0; i < RETRY; i++ )
 	{
 		wait( 0.003 );
-		if ( reg( SYS_STATUS ) & CHIP_READY )
+		if ( this->reg( SYS_STATUS ) & CHIP_READY )
 			return;
 	}
 	
@@ -169,7 +169,7 @@ void NAFE33352_Base::reset( bool hardware_reset )
 void NAFE33352_Base::open_dac_output( const uint16_t (&cc)[ 6 ] )
 {
 	for ( auto i = 0; i < 6; i++ )
-		reg( AIO_CONFIG + i, cc[ i ] );
+		this->reg( AIO_CONFIG + i, cc[ i ] );
 }
 
 
@@ -239,12 +239,12 @@ void NAFE33352_Base::open_logical_channel( int ch, const uint16_t (&cc)[ 4 ] )
 	
 	if ( pga_on && !pga_enabled )
 	{
-		reg( AI_SYSCFG, 0x0800 );
+		this->reg( AI_SYSCFG, 0x0800 );
 		pga_enabled	= true;
 	}
 	
 	for ( auto i = 0; i < 3; i++ )
-		reg( AI_CONFIG0 + i, cc[ i ] );
+		this->reg( AI_CONFIG0 + i, cc[ i ] );
 	
 	enable_logical_channel( ch );
 	
@@ -290,8 +290,8 @@ double NAFE33352_Base::calc_delay( int ch )
 	
 	command( CMD_CH0 + ch );
 
-	uint16_t ch_config1	= reg( AI_CONFIG1 );
-	uint16_t ch_config2	= reg( AI_CONFIG2 );
+	uint16_t ch_config1	= this->reg( AI_CONFIG1 );
+	uint16_t ch_config2	= this->reg( AI_CONFIG2 );
 	
 	uint8_t		adc_data_rate		= (ch_config1 >>  3) & 0x001F;
 	uint8_t		adc_sinc			= (ch_config1 >>  0) & 0x0007;
@@ -352,7 +352,7 @@ void NAFE33352_Base::close_logical_channel( int ch )
 
 void NAFE33352_Base::close_logical_channel( void )
 {	
-	reg( AI_MULTI_CH_EN, 0x0000 );
+	this->reg( AI_MULTI_CH_EN, 0x0000 );
 	channel_info_update( 0x0000 );
 }
 
@@ -379,7 +379,7 @@ void NAFE33352_Base::DRDY_by_sequencer_done( bool flag )
 
 int32_t NAFE33352_Base::read( int ch )
 {
-	return reg( AI_DATA0 + ch );
+	return this->reg( AI_DATA0 + ch );
 }
 
 void NAFE33352_Base::read( raw_t *data )
@@ -417,7 +417,7 @@ void NAFE33352_Base::read( std::vector<volt_t>& data_vctr )
 
 void NAFE33352_Base::dac_out( double vi, double full_scale, uint8_t bit_length )
 {
-	reg( AO_DATA, dac_code( vi, full_scale, bit_length ) );
+	this->reg( AO_DATA, dac_code( vi, full_scale, bit_length ) );
 }
 
 int32_t NAFE33352_Base::dac_code( double a, double full_scale, uint8_t bit_length )
@@ -437,91 +437,38 @@ void NAFE33352_Base::command( uint16_t com )
 	write_r16( com );
 }
 
-void NAFE33352_Base::reg( Register16 r, uint16_t value )
-{
-	write_r16( static_cast<uint16_t>( r ), value );
-}
-
-void NAFE33352_Base::reg( Register24 r, uint32_t value )
-{
-	write_r24( static_cast<uint16_t>( r ), value );
-}
-
-uint16_t NAFE33352_Base::reg( Register16 r )
-{
-	return read_r16( static_cast<uint16_t>( r ) );
-}
-
-uint32_t NAFE33352_Base::reg( Register24 r )
-{
-	return read_r24( static_cast<uint16_t>( r ) );
-}
+// NAFE33352_Base this->reg() functions are provided by templated
+// implementations in the header (`AFE_NXP.h`).
 
 uint64_t NAFE33352_Base::part_number( void )
 {
-	return (static_cast<uint64_t>( reg( PN2 ) ) << (16 + 8)) | static_cast<uint64_t>( reg( PN1 ) ) << 8 | reg( PN0_REV ) >> 8;
+	return (static_cast<uint64_t>( this->reg( PN2 ) ) << (16 + 8)) | static_cast<uint64_t>( this->reg( PN1 ) ) << 8 | this->reg( PN0_REV ) >> 8;
 }
 
 uint8_t NAFE33352_Base::revision_number( void )
 {
-	return reg( PN0_REV ) & 0xF;
+	return this->reg( PN0_REV ) & 0xF;
 }
 
 uint64_t NAFE33352_Base::serial_number( void )
 {
 	uint64_t	serial_number;
 
-	serial_number	  = reg( SERIAL1 );
+	serial_number	  = this->reg( SERIAL1 );
 	serial_number	<<=  24;
-	return serial_number | reg( SERIAL0 );
+	return serial_number | this->reg( SERIAL0 );
 }
 			
 float NAFE33352_Base::temperature( void )
 {
-	return reg( DIE_TEMP ) / 64.0;
+	return this->reg( DIE_TEMP ) / 64.0;
 }
 
-#if 0
-void NAFE33352_Base::reg_dump( RegVct reg_vctr )
-{
-	for ( auto r : reg_vctr )
-	{
-		if ( const NAFE33352_Base::Register24 *ap	= std::get_if<NAFE33352_Base::Register24>( &r ) )
-		{
-			printf( "0x%04X: 0x%06lX\r\n", static_cast<int>( *ap ), reg( *ap ) & 0xFFFFFF );
-		}
-		else if ( const NAFE33352_Base::Register16 *ap	= std::get_if<NAFE33352_Base::Register16>( &r ) )
-		{
-			printf( "0x%04X: 0x%04X\r\n", static_cast<int>( *ap ), reg( *ap ) );
-		}
-	}
-}
-#else
-void NAFE33352_Base::reg_dump( RegVct reg_vctr )
-{
-	table_view( reg_vctr.size(), 4, 	[ & ]( int v )
-										{
-											if ( const NAFE33352_Base::Register24 *ap	= std::get_if<NAFE33352_Base::Register24>( &(reg_vctr[ v ]) ) )
-												printf( "    0x%04X: 0x%06lX",  static_cast<int>( *ap ), reg( *ap ) & 0xFFFFFF );
-											else if ( const NAFE33352_Base::Register16 *ap	= std::get_if<NAFE33352_Base::Register16>( &(reg_vctr[ v ]) ) )
-												printf( "    0x%04X: 0x  %04X", static_cast<int>( *ap ), reg( *ap ) );
-										}, 
-										[]()
-										{
-											printf( "\r\n" ); 
-										}
-						   );
-}
-#endif
-
-void NAFE33352_Base::reg_dump( NAFE33352_Base::Register24 addr, int length )
-{
-	table_view( length, 4, [ & ]( int v ){ printf( "  %8ld @ 0x%04X", reg( v + addr ), v + (uint16_t)addr ); }, [](){ printf( "\r\n" ); });
-}
+// reg_dump implementations moved to AFE_base (template)
 
 void NAFE33352_Base::logical_ch_config_view( void )
 {
-	uint16_t en_ch_bitmap	= reg( AI_MULTI_CH_EN ) >> 8;
+	uint16_t en_ch_bitmap	= this->reg( AI_MULTI_CH_EN ) >> 8;
 	
 	for ( auto channel = 0; channel < 16; channel++ )
 	{	
@@ -530,7 +477,7 @@ void NAFE33352_Base::logical_ch_config_view( void )
 		if ( en_ch_bitmap & (0x1 << channel) )
 		{
 			command( CMD_CH0 + channel );
-			table_view( 4, 4, [ this ]( int v ){ printf( "  0x%04X @0x%04X", reg( v + AI_CONFIG0 ), (uint16_t)(v + AI_CONFIG0) ); } );
+			table_view( 4, 4, [ this ]( int v ){ printf( "  0x%04X @0x%04X", this->reg( v + AI_CONFIG0 ), (uint16_t)(v + AI_CONFIG0) ); } );
 		}
 		else
 		{

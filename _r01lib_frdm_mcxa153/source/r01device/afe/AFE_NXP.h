@@ -54,6 +54,7 @@
 #include	<stdint.h>
 #include	"r01lib.h"
 #include	"SPI_for_AFE.h"
+#include	"AFE_Traits.h"
 #include	<cmath>
 #include	<vector>
 #include	<variant>
@@ -170,6 +171,43 @@ public:
 	 * @param ch logical channel number (0 ~ 15)
 	 */
 	virtual raw_t	start_and_read( int ch );
+
+	/** Low-level register helpers (implemented in AFE_NXP.cpp)
+	 *  These provide a single implementation point for register access
+	 *  and are used by device-specific `reg()` wrappers.
+	 */
+	void	reg_write16(uint16_t addr, uint16_t value);
+	void	reg_write24(uint16_t addr, uint32_t value);
+	uint16_t	reg_read16(uint16_t addr);
+	uint32_t	reg_read24(uint16_t addr);
+
+	template<typename Reg16T, typename Reg24T>
+	inline void reg_dump(const std::vector<std::variant<Reg16T, Reg24T>>& reg_vctr)
+	{
+		table_view( reg_vctr.size(), 4,
+			[&reg_vctr, this]( int v )
+			{
+				if ( const Reg24T *ap = std::get_if<Reg24T>( &reg_vctr[ v ] ) )
+					printf( "    0x%04X: 0x%06lX", static_cast<int>( *ap ), (unsigned long)( this->reg( *ap ) & 0xFFFFFF ) );
+				else if ( const Reg16T *ap = std::get_if<Reg16T>( &reg_vctr[ v ] ) )
+					printf( "    0x%04X: 0x  %04X", static_cast<int>( *ap ), (unsigned int)( this->reg( *ap ) & 0xFFFF ) );
+			},
+			[](){ printf( "\r\n" ); }
+		);
+	}
+
+	template<typename Reg24T>
+	inline void reg_dump( Reg24T addr, int length )
+	{
+		table_view( length, 4, [this, addr]( int v ){ printf( "  %8lu @ 0x%04X", (unsigned long)this->reg( v + addr ), v + (uint16_t)addr ); }, [](){ printf( "\r\n" ); } );
+	}
+
+	template<typename Reg16T, typename Reg24T>
+	inline void reg_dump( std::initializer_list<std::variant<Reg16T, Reg24T>> init )
+	{
+		std::vector<std::variant<Reg16T, Reg24T>> v( init );
+		reg_dump<Reg16T, Reg24T>( v );
+	}
 	
 #ifdef	NON_TEMPLATE_VERSION_FOR_START_AND_READ
 
@@ -316,6 +354,36 @@ protected:
 	static void				DRDY_cb( void );
 	int						wait_conversion_complete( double delay = -1.0 );
 
+	template< typename R, typename V >
+	inline void reg( R r, V value )
+	{
+		using underlying	= std::underlying_type_t<R>;
+		
+		if ( std::is_same_v<underlying, uint16_t> )
+		{
+			reg_write16( static_cast<uint16_t>( r ), static_cast<uint16_t>( value ));
+		}
+		else
+		{
+			reg_write24( static_cast<uint16_t>( r ), value );
+		}
+	}
+
+	// unified read: return width deduced from register type
+	template< typename R >
+	inline uint32_t reg( R r )
+	{
+		using underlying	= std::underlying_type_t<R>;
+		
+		if ( std::is_same_v<underlying, uint16_t> )
+		{
+			return static_cast<uint32_t>( reg_read16( static_cast<uint16_t>( r ) ) );
+		}
+		else
+		{
+			return reg_read24( static_cast<uint16_t>( r ) );
+		}
+	}
 };
 
 class LogicalChannel_Base
@@ -349,6 +417,11 @@ class NAFE13388_Base : public AFE_base
 {
 public:
 	using	ch_setting_t	= uint16_t[ 4 ];
+	
+	/** Register and Command definitions via AFE_Traits */
+	using Register16	= AFE_Traits<NAFE13388_Base>::Register16;
+	using Register24	= AFE_Traits<NAFE13388_Base>::Register24;
+	using Command		= AFE_Traits<NAFE13388_Base>::Command;
 
 	typedef struct	_reference_point	{
 		double	voltage;
@@ -512,176 +585,19 @@ public:
 		G_PGA_x_8_0,
 		G_PGA_x16_0,
 	};
-	
-	enum class Register16 : uint16_t {
-		CH_CONFIG0				= 0x20,
-		CH_CONFIG1				= 0x21,
-		CH_CONFIG2				= 0x22,
-		CH_CONFIG3				= 0x23,
-		CH_CONFIG4				= 0x24,
-		CRC_CONF_REGS			= 0x25,
-		CRC_COEF_REGS			= 0x26,
-		CRC_TRIM_REGS			= 0x27,
-		GPI_DATA				= 0x29,
-		GPIO_CONFIG0			= 0x2A,
-		GPIO_CONFIG1			= 0x2B,
-		GPIO_CONFIG2			= 0x2C,
-		GPI_EDGE_POS			= 0x2D,
-		GPI_EDGE_NEG			= 0x2E,
-		GPO_DATA				= 0x2F,
-		SYS_CONFIG0				= 0x30,
-		SYS_STATUS0				= 0x31,
-		GLOBAL_ALARM_ENABLE		= 0x32,
-		GLOBAL_ALARM_INTERRUPT	= 0x33,
-		DIE_TEMP				= 0x34,
-		CH_STATUS0				= 0x35,
-		CH_STATUS1				= 0x36,
-		THRS_TEMP				= 0x37,
-		PN2						= 0x7C,
-		PN1						= 0x7D,
-		PN0						= 0x7E,
-		CRC_TRIM_INT			= 0x7F,
-	};
-
-	enum class Register24 : uint16_t {
-		CH_DATA0		= 0x40,
-		CH_DATA1		= 0x41,
-		CH_DATA2		= 0x42,
-		CH_DATA3		= 0x43,
-		CH_DATA4		= 0x44,
-		CH_DATA5		= 0x45,
-		CH_DATA6		= 0x46,
-		CH_DATA7		= 0x47,
-		CH_DATA8		= 0x48,
-		CH_DATA9		= 0x4A,
-		CH_DATA10		= 0x4B,
-		CH_DATA11		= 0x4C,
-		CH_DATA13		= 0x4D,
-		CH_DATA14		= 0x4E,
-		CH_DATA15		= 0x4F,
-		CH_CONFIG5_0	= 0x50,
-		CH_CONFIG5_1	= 0x51,
-		CH_CONFIG5_2	= 0x52,
-		CH_CONFIG5_3	= 0x53,
-		CH_CONFIG5_4	= 0x54,
-		CH_CONFIG5_5	= 0x55,
-		CH_CONFIG5_6	= 0x56,
-		CH_CONFIG5_7	= 0x57,
-		CH_CONFIG5_8	= 0x58,
-		CH_CONFIG5_9	= 0x59,
-		CH_CONFIG5_10	= 0x5A,
-		CH_CONFIG5_11	= 0x5B,
-		CH_CONFIG5_12	= 0x5C,
-		CH_CONFIG5_13	= 0x5D,
-		CH_CONFIG5_14	= 0x5E,
-		CH_CONFIG5_15	= 0x5F,
-		CH_CONFIG6_0	= 0x60,
-		CH_CONFIG6_1	= 0x61,
-		CH_CONFIG6_2	= 0x62,
-		CH_CONFIG6_3	= 0x63,
-		CH_CONFIG6_4	= 0x64,
-		CH_CONFIG6_5	= 0x65,
-		CH_CONFIG6_6	= 0x66,
-		CH_CONFIG6_7	= 0x67,
-		CH_CONFIG6_8	= 0x68,
-		CH_CONFIG6_9	= 0x69,
-		CH_CONFIG6_10	= 0x6A,
-		CH_CONFIG6_11	= 0x6B,
-		CH_CONFIG6_12	= 0x6C,
-		CH_CONFIG6_13	= 0x6D,
-		CH_CONFIG6_14	= 0x6E,
-		CH_CONFIG6_15	= 0x6F,
-		GAIN_COEFF0		= 0x80,
-		GAIN_COEFF1		= 0x81,
-		GAIN_COEFF2		= 0x82,
-		GAIN_COEFF3		= 0x83,
-		GAIN_COEFF4		= 0x84,
-		GAIN_COEFF5		= 0x85,
-		GAIN_COEFF6		= 0x86,
-		GAIN_COEFF7		= 0x87,
-		GAIN_COEFF8		= 0x88,
-		GAIN_COEFF9		= 0x89,
-		GAIN_COEFF10	= 0x8A,
-		GAIN_COEFF11	= 0x8B,
-		GAIN_COEFF12	= 0x8C,
-		GAIN_COEFF13	= 0x8D,
-		GAIN_COEFF14	= 0x8E,
-		GAIN_COEFF15	= 0x8F,
-		OFFSET_COEFF0	= 0x90,
-		OFFSET_COEFF1	= 0x91,
-		OFFSET_COEFF2	= 0x92,
-		OFFSET_COEFF3	= 0x93,
-		OFFSET_COEFF4	= 0x94,
-		OFFSET_COEFF5	= 0x95,
-		OFFSET_COEFF6	= 0x96,
-		OFFSET_COEFF7	= 0x97,
-		OFFSET_COEFF8	= 0x98,
-		OFFSET_COEFF9	= 0x99,
-		OFFSET_COEFF10	= 0x9A,
-		OFFSET_COEFF11	= 0x9B,
-		OFFSET_COEFF12	= 0x9C,
-		OFFSET_COEFF13	= 0x9D,
-		OFFSET_COEFF14	= 0x9E,
-		OFFSET_COEFF15	= 0x9F,
-		OPT_COEF0		= 0xA0,
-		OPT_COEF1		= 0xA1,
-		OPT_COEF2		= 0xA2,
-		OPT_COEF3		= 0xA3,
-		OPT_COEF4		= 0xA4,
-		OPT_COEF5		= 0xA5,
-		OPT_COEF6		= 0xA6,
-		OPT_COEF7		= 0xA7,
-		OPT_COEF8		= 0xA8,
-		OPT_COEF9		= 0xA9,
-		OPT_COEF10		= 0xAA,
-		OPT_COEF11		= 0xAB,
-		OPT_COEF12		= 0xAC,
-		OPT_COEF13		= 0xAD,
-		SERIAL1			= 0xAE,
-		SERIAL0			= 0xAF,
-	};
-
-	enum Command : uint16_t {
-		CMD_CH0 			= 0x0000,
-		CMD_CH1 			= 0x0001,
-		CMD_CH2 			= 0x0002,
-		CMD_CH3 			= 0x0003,
-		CMD_CH4 			= 0x0004,
-		CMD_CH5 			= 0x0005,
-		CMD_CH6 			= 0x0006,
-		CMD_CH7 			= 0x0007,
-		CMD_CH8 			= 0x0008,
-		CMD_CH9 			= 0x0009,
-		CMD_CH10 			= 0x000A,
-		CMD_CH11 			= 0x000B,
-		CMD_CH12 			= 0x000C,
-		CMD_CH13 			= 0x000D,
-		CMD_CH14 			= 0x000E,
-		CMD_CH15 			= 0x000F,
-		CMD_ABORT 			= 0x0010,
-		CMD_END				= 0x0011,
-		CMD_CLEAR_ALARM		= 0x0012,
-		CMD_CLEAR_DATA		= 0x0013,
-		CMD_RESET			= 0x0014,
-		CMD_CLEAR_REG		= 0x0015,
-		CMD_RELOAD			= 0x0016,
-		TBD					= 0x0017,
-		CMD_SS				= 0x2000,
-		CMD_SC				= 0x2001,
-		CMD_MM				= 0x2002,
-		CMD_MC				= 0x2003,
-		CMD_MS				= 0x2004,
-		CMD_BURST_DATA		= 0x2005,
-		CMD_CALC_CRC_CONFG	= 0x2006,
-		CMD_CALC_CRC_COEF	= 0x2007,
-		CMD_CALC_CRC_FAC	= 0x2008,
-	};
 
 	using	RegisterVariant	= std::variant<Register16, Register24>;
+
 	using	RegVct			= std::vector<RegisterVariant>;
+
+	// `reg_dump` is provided by AFE_base as a template to avoid
+	// duplicate implementations in each derived device class.
 	
-	void	reg_dump( RegVct reg_vctr );
-	void	reg_dump( Register24 addr, int length );
+	// Forwarding overloads for convenience and to preserve existing callsites
+	// that pass a braced-init-list which converts to `RegVct`.
+	inline void reg_dump( RegVct reg_vctr ) { AFE_base::reg_dump<Register16,Register24>( reg_vctr ); }
+	inline void reg_dump( Register24 addr, int length ) { AFE_base::reg_dump<Register24>( addr, length ); }
+
 	void	logical_ch_config_view( void );
 		
 	/** Command
@@ -690,35 +606,31 @@ public:
 	 */
 	virtual void		command( uint16_t com );
 
-	/** Write register
-	 *
-	 *	Writes register. Register width is selected by reg type (Register16 ot Register24)
-	 * @param reg register specified by Register16 member
-	 */
-	virtual void		reg( Register16 r, uint16_t value );
+	// bring `reg` templates from base into this class's lookup scope
+	using AFE_base::reg;
 
-	/** Write register
-	 *
-	 *	Writes register. Register width is selected by reg type (Register16 ot Register24)
-	 * @param reg register specified by Register24 member
-	 */
-	virtual void		reg( Register24 r, uint32_t value );
+	// Explicit overloads for this device's register types (after type aliases)
+	inline auto reg( Register16 r )
+	{
+		return reg_read16( static_cast<uint16_t>( r ) );
+	}
 
-	/** Read register
-	 *
-	 *	Reads register. Register width is selected by reg type (Register16 ot Register24)
-	 * @param reg register specified by Register16 member
-	 * @return readout value
-	 */
-	virtual uint16_t	reg( Register16 r );
+	inline auto reg( Register24 r )
+	{
+		return reg_read24( static_cast<uint16_t>( r ) );
+	}
 
-	/** Read register
-	 *
-	 *	Reads register. Register width is selected by reg type (Register16 ot Register24)
-	 * @param reg register specified by Register24 member
-	 * @return readout value
-	 */
-	virtual uint32_t	reg( Register24 r );
+	template<typename V>
+	inline void reg( Register16 r, V value )
+	{
+		reg_write16( static_cast<uint16_t>(r), static_cast<uint16_t>( value ) );
+	}
+
+	template<typename V>
+	inline void reg( Register24 r, V value )
+	{
+		reg_write24( static_cast<uint16_t>(r), static_cast<uint32_t>( value ) );
+	}
 	
 	/** Register bit operation
 	 *
