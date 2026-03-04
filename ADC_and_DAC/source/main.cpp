@@ -28,7 +28,7 @@ int main( void )
 	printf( "GAINCOEF5 = %lf\r\n",   shasta.reg( GAIN_COEF5 ) / (double)0x400000  );
 #endif
 
-#if 1
+#if 0
 	shasta.dac.configure( VOLTAGE );
 	shasta.dac	= 5.00;			//	5V
 #else
@@ -56,7 +56,7 @@ int main( void )
 			printf( "    %lfV", data );
 		}
 
-		data	= shasta.logical_channel[ shasta.enabled_logical_channels() - 1 ] / 50.00;
+		data	= shasta.logical_channel[ shasta.enabled_logical_channels() - 1 ] / shasta.on_board_shunt_resister;
 		printf( "    %lfA", data );
 
 		printf( "    AIO_STATUS = 0x%04X\r\n", shasta.reg( AIO_STATUS ) );
